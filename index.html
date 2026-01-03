@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>RPG DM Station - V30 Audio Fix</title>
+<title>RPG DM Station - V31 External Links</title>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <style>
@@ -30,6 +30,7 @@
   
   /* --- VISUAIS --- */
   #mapa-visual { width: 100%; height: 100%; background-size: cover; background-position: center; transition: 0.5s; }
+  /* Filtros visuais para dar o clima */
   .modo-dia #mapa-visual { filter: brightness(1) contrast(1.05); }
   .modo-noite #mapa-visual { filter: brightness(0.5) contrast(1.2) hue-rotate(-15deg); }
   .modo-invertido #mapa-visual { filter: invert(1) hue-rotate(180deg) brightness(0.8) contrast(1.3); }
@@ -177,32 +178,90 @@
 
 <script>
 /* ========================================================= */
-/* CONFIGURAÇÃO DE ÁUDIO E MAPAS */
+/* CONFIGURAÇÃO DE LINKS EXTERNOS (URLs) */
 /* ========================================================= */
 const CONFIG = {
-  pastas: { imagens: "maps/", audios: "sons/" },
+  // Você não precisa mais das pastas base, pois usaremos links completos
   mapas: {
-    // CENÁRIO 1 (Com seu arquivo específico)
+    // === MAPA 1 ===
     '1': { 
-      arquivo: 'cenario_1', 
-      sons: { 
-        d: 'cenario_1_dia.mp3',       // <--- SEU ARQUIVO AQUI
-        n: 'cenario_1_noite.mp3',     // Exemplo se tiver a noite
-        i: 'cenario_1_invertido.mp3'  // Exemplo se tiver o invertido
-      } 
+      img: {
+        d: 'https://i.imgur.com/t70Pggh.jpeg',       // Link direto da imagem (Dia)
+        n: 'https://i.imgur.com/YG1uink.jpeg',     // Link direto da imagem (Noite)
+        i: 'https://i.imgur.com/BSpsexk.jpeg'  // Link direto da imagem (Invertido)
+      },
+      audio: {
+        d: 'https://files.catbox.moe/2ztb9c.mp3',       // Link direto do áudio
+        n: 'https://seusite.com/musica_noite.mp3',
+        i: 'https://seusite.com/musica_batalha.mp3'
+      }
     },
-    // CENÁRIO 2 (Exemplo padrão)
+    // === MAPA 2 ===
     '2': { 
-      arquivo: 'cenario_2', 
-      sons: { d: 'cenario_2_dia.mp3', n: 'cenario_2_noite.mp3', i: 'cenario_2_invertido.mp3' } 
+      img: {
+        d: 'https://i.imgur.com/l33W47q.jpeg', // Cole seus links aqui
+        n: 'https://i.imgur.com/pYwiL52.jpeg',
+        i: 'https://i.imgur.com/VHD9fQs.jpeg'
+      },
+      audio: {
+        d: 'https://files.catbox.moe/e5f1s7.mp3',       // Link direto do áudio
+        n: 'https://seusite.com/musica_noite.mp3',
+        i: 'https://seusite.com/musica_batalha.mp3'
+      }
     },
-    // Demais cenários...
-    '3': { arquivo: 'cenario_3', sons: { d: 'dia.mp3', n: 'noite.mp3', i: 'invertido.mp3' } },
-    '4': { arquivo: 'cenario_4', sons: { d: 'dia.mp3', n: 'noite.mp3', i: 'invertido.mp3' } },
-    '5': { arquivo: 'cenario_5', sons: { d: 'dia.mp3', n: 'noite.mp3', i: 'invertido.mp3' } },
-    '6': { arquivo: 'cenario_6', sons: { d: 'dia.mp3', n: 'noite.mp3', i: 'invertido.mp3' } }
+	// === MAPA 2 ===
+    '2': { 
+      img: {
+        d: 'https://i.imgur.com/l33W47q.jpeg', // Cole seus links aqui
+        n: 'https://i.imgur.com/pYwiL52.jpeg',
+        i: 'https://i.imgur.com/VHD9fQs.jpeg'
+      },
+      audio: { d: '', n: '', i: '' } 
+    },
+	// === MAPA 3 ===
+    '3': { 
+      img: {
+        d: 'https://i.imgur.com/c0yg80W.jpeg', // Cole seus links aqui
+        n: 'https://i.imgur.com/W54GwTN.jpeg',
+        i: 'https://i.imgur.com/mvmS1Un.jpeg'
+      },
+      audio: { d: '', n: '', i: '' } 
+    },
+	// === MAPA 4 ===
+    '4': { 
+      img: {
+        d: 'https://i.imgur.com/Ixd3Orw.jpeg', // Cole seus links aqui
+        n: 'https://i.imgur.com/SGDOfYS.jpeg',
+        i: 'https://i.imgur.com/oQn27ML.jpeg'
+      },
+      audio: { d: '', n: '', i: '' } 
+    },
+	// === MAPA 5 ===
+    '5': { 
+      img: {
+        d: 'https://i.imgur.com/snuoKNG.jpeg', // Cole seus links aqui
+        n: 'https://i.imgur.com/6cOkclv.jpeg',
+        i: 'https://i.imgur.com/eH3gWOm.png'
+      },
+      audio: { d: '', n: '', i: '' } 
+    },
+		// === MAPA 6 ===
+    '6': { 
+      img: {
+        d: 'https://i.imgur.com/snuoKNG.jpeg', // Cole seus links aqui
+        n: 'https://i.imgur.com/6cOkclv.jpeg',
+        i: 'https://i.imgur.com/eH3gWOm.png'
+      },
+      audio: { d: '', n: '', i: '' } 
+    },
+    // === MAPA 7 ===
+    '7': { 
+      img: { d: 'https://i.imgur.com/l33W47q.jpeg', n: '', i: '' },
+      audio: { d: '', n: '', i: '' } 
+    },
+
   },
-  estados: { 'd': {id:'dia', sufixo:'_dia'}, 'n': {id:'noite', sufixo:'_noite'}, 'i': {id:'invertido', sufixo:'_invertido'} },
+  
   listaStatus: [
     { valor: "", label: "🟢 Saudável" }, { valor: "cansado", label: "🟡 Cansado" },
     { valor: "critico", label: "🔴 Debilitado" }, { valor: "caido", label: "💀 Caído" },
@@ -212,7 +271,8 @@ const CONFIG = {
     { nome: "Jogador 1", classe: "Guerreiro", hpMax: 50, hpAtual: 50, status: "", posicao: "sul" },
     { nome: "Jogador 2", classe: "Mago", hpMax: 30, hpAtual: 30, status: "", posicao: "norte" }
   ],
-  extensao_imagem: ".jpg", volume: 0.5, saveKey: "rpg_dm_v30_audiofix"
+  volume: 0.5, 
+  saveKey: "rpg_dm_v31_external"
 };
 
 const ui = {
@@ -226,7 +286,7 @@ let estadoAtual = { mapa: '1', modo: 'd', audio: true };
 let tvVisible = false; let lastDiceRoll = { val: 0, id: 0 }; 
 let isRemote = false; let modoEdicao = false;
 let faixaAtiva = 'A'; let trilhaAtualUrl = "";
-let peer = null; let conn = null; let roomName = ""; let peerIdPrefix = "rpg-sys-v30-";
+let peer = null; let conn = null; let roomName = ""; let peerIdPrefix = "rpg-sys-v31-";
 
 ui.faixaA = new Audio(); ui.faixaA.loop = true; ui.faixaA.volume = 0;
 ui.faixaB = new Audio(); ui.faixaB.loop = true; ui.faixaB.volume = 0;
@@ -404,7 +464,7 @@ function audioCrossfade(urlNovo) {
   const ent = faixaAtiva === 'A' ? ui.faixaB : ui.faixaA;
   const sai = faixaAtiva === 'A' ? ui.faixaA : ui.faixaB;
   faixaAtiva = faixaAtiva === 'A' ? 'B' : 'A';
-  ent.src = CONFIG.pastas.audios + urlNovo; ent.volume = 0; 
+  ent.src = urlNovo; ent.volume = 0; // USA O LINK DIRETO
   if (estadoAtual.audio) ent.play().catch(()=>{});
   let vol = 0; if(window.fadeInt) clearInterval(window.fadeInt);
   window.fadeInt = setInterval(() => {
@@ -415,11 +475,19 @@ function audioCrossfade(urlNovo) {
 
 function carregarCena() {
   if(isRemote) return; 
-  const m = CONFIG.mapas[estadoAtual.mapa]; const mod = CONFIG.estados[estadoAtual.modo]; if(!m)return;
-  const url = CONFIG.pastas.imagens + m.arquivo + mod.sufixo + CONFIG.extensao_imagem;
-  const img = new Image(); img.src = url;
-  img.onload = () => { ui.visual.style.backgroundImage = `url('${url}')`; };
-  if(m.sons && m.sons[estadoAtual.modo]) audioCrossfade(m.sons[estadoAtual.modo]);
+  const mapaConf = CONFIG.mapas[estadoAtual.mapa]; 
+  if(!mapaConf) return;
+
+  // Carrega Imagem usando URL direta
+  const urlImg = mapaConf.img[estadoAtual.modo];
+  if (urlImg) {
+    const img = new Image(); img.src = urlImg;
+    img.onload = () => { ui.visual.style.backgroundImage = `url('${urlImg}')`; };
+  }
+
+  // Carrega Áudio usando URL direta
+  const urlAudio = mapaConf.audio[estadoAtual.modo];
+  if (urlAudio && urlAudio !== "") audioCrossfade(urlAudio);
 }
 
 function salvarJogo(save=true) { if(save) localStorage.setItem(CONFIG.saveKey, JSON.stringify(CONFIG.jogadores)); }
