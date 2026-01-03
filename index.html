@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>RPG DM Station - V31 External Links</title>
+<title>RPG DM Station - V36 Timer Fix</title>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <style>
@@ -29,8 +29,7 @@
   #game-container { position: relative; width: 100vw; height: 100vh; display: none; }
   
   /* --- VISUAIS --- */
-  #mapa-visual { width: 100%; height: 100%; background-size: cover; background-position: center; transition: 0.5s; }
-  /* Filtros visuais para dar o clima */
+  #mapa-visual { width: 100%; height: 100%; background-size: cover; background-position: center; transition: background-image 0.5s ease-in-out; }
   .modo-dia #mapa-visual { filter: brightness(1) contrast(1.05); }
   .modo-noite #mapa-visual { filter: brightness(0.5) contrast(1.2) hue-rotate(-15deg); }
   .modo-invertido #mapa-visual { filter: invert(1) hue-rotate(180deg) brightness(0.8) contrast(1.3); }
@@ -93,9 +92,7 @@
   .tv-card { position: relative; pointer-events: auto; width: 260px; flex-shrink: 0; background: rgba(0, 0, 0, 0.9); border: 2px solid #666; border-radius: 12px; padding: 15px; box-shadow: 0 0 30px rgba(0,0,0,0.8); color: #fff; }
   .tv-name { font-size: 20px; font-weight: bold; margin-bottom: 5px; }
   .tv-status { text-align: center; font-weight: bold; font-size: 16px; margin-top: 10px; padding-top: 5px; border-top: 1px solid #444; color: #ddd; text-transform: uppercase; }
-  #tv-dice-overlay { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); border: 4px solid #fff; border-radius: 20px; font-size: 100px; font-weight: bold; color: #fff; z-index: 9999; opacity: 0; transition: transform 0.3s; }
-  #tv-dice-overlay.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-
+  
   /* COLORS & UTILS */
   .mestre-card[data-status="cansado"], .tv-card[data-status="cansado"] { border-color: #f1c40f !important; }
   .mestre-card[data-status="critico"], .tv-card[data-status="critico"] { border-color: #e74c3c !important; }
@@ -107,6 +104,41 @@
   .btn-delete { display: none; position: absolute; top: 5px; right: 5px; background: #c0392b; color: #fff; border: 1px solid #fff; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; z-index: 10; }
   .modo-edicao .btn-delete { display: block; }
   .modo-edicao .input-nome, .modo-edicao .input-classe { pointer-events: auto; border-bottom: 1px dashed #777; background: rgba(255,255,255,0.05); }
+
+  /* ================================================================= */
+  /* ANIMAÇÃO D20 (SUSPENSE + 5 SEGUNDOS) */
+  /* ================================================================= */
+  #tv-dice-overlay {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+    width: 300px; height: 300px; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.95); border: 4px solid #888; border-radius: 50%;
+    font-size: 120px; font-weight: 900; color: #fff; z-index: 9999;
+    opacity: 0; pointer-events: none; transition: transform 0.1s;
+  }
+
+  /* Fase 1: Rolando */
+  #tv-dice-overlay.rolling {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    animation: pulseRoll 0.1s infinite alternate;
+    border-color: #fff; color: #fff;
+  }
+
+  /* Fase 2: Impacto Final */
+  #tv-dice-overlay.impact {
+    transform: translate(-50%, -50%) scale(1.2);
+    border-width: 8px;
+    text-shadow: 0 0 30px currentColor;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  #tv-dice-overlay.impact.crit-20 { border-color: #f1c40f; color: #f1c40f; box-shadow: 0 0 60px #2ecc71; }
+  #tv-dice-overlay.impact.crit-1  { border-color: #c0392b; color: #e74c3c; box-shadow: 0 0 60px #c0392b; animation: shake 0.4s ease-in-out; }
+  #tv-dice-overlay.impact.normal  { border-color: #3498db; color: #fff; box-shadow: 0 0 40px #3498db; }
+
+  @keyframes pulseRoll { from { transform: translate(-50%, -50%) scale(0.9); } to { transform: translate(-50%, -50%) scale(1.0); } }
+  @keyframes shake { 0%, 100% { transform: translate(-50%, -50%) scale(1.2); } 25% { transform: translate(-52%, -50%) scale(1.2); } 75% { transform: translate(-48%, -50%) scale(1.2); } }
+
 </style>
 </head>
 <body>
@@ -132,7 +164,8 @@
     <div id="zone-leste" class="zone"></div>
     <div id="zone-oeste" class="zone"></div>
   </div>
-  <div id="tv-dice-overlay">20</div>
+  
+  <div id="tv-dice-overlay"></div>
 
   <div id="hud-mestre">
     <div class="hud-header">
@@ -142,7 +175,7 @@
       </div>
 
       <div class="dice-wrapper">
-        <button class="btn-dice" onclick="rolarD20()">🎲 ROLAR D20</button>
+        <button class="btn-dice" onclick="rolarD20()">🎲 ROLAR D20 (SUSPENSE)</button>
         <div id="dice-display">-</div>
       </div>
 
@@ -177,21 +210,18 @@
 </div>
 
 <script>
-/* ========================================================= */
-/* CONFIGURAÇÃO DE LINKS EXTERNOS (URLs) */
-/* ========================================================= */
+/* CONFIGURAÇÃO */
 const CONFIG = {
-  // Você não precisa mais das pastas base, pois usaremos links completos
   mapas: {
     // === MAPA 1 ===
     '1': { 
       img: {
-        d: 'https://i.imgur.com/t70Pggh.jpeg',       // Link direto da imagem (Dia)
-        n: 'https://i.imgur.com/YG1uink.jpeg',     // Link direto da imagem (Noite)
-        i: 'https://i.imgur.com/BSpsexk.jpeg'  // Link direto da imagem (Invertido)
+        d: 'https://i.imgur.com/t70Pggh.jpeg',
+        n: 'https://i.imgur.com/YG1uink.jpeg',
+        i: 'https://i.imgur.com/BSpsexk.jpeg'
       },
       audio: {
-        d: 'https://files.catbox.moe/2ztb9c.mp3',       // Link direto do áudio
+        d: 'https://files.catbox.moe/2ztb9c.mp3',
         n: 'https://seusite.com/musica_noite.mp3',
         i: 'https://seusite.com/musica_batalha.mp3'
       }
@@ -199,56 +229,47 @@ const CONFIG = {
     // === MAPA 2 ===
     '2': { 
       img: {
-        d: 'https://i.imgur.com/l33W47q.jpeg', // Cole seus links aqui
+        d: 'https://i.imgur.com/l33W47q.jpeg', 
         n: 'https://i.imgur.com/pYwiL52.jpeg',
         i: 'https://i.imgur.com/VHD9fQs.jpeg'
       },
       audio: {
-        d: 'https://files.catbox.moe/e5f1s7.mp3',       // Link direto do áudio
-        n: 'https://seusite.com/musica_noite.mp3',
-        i: 'https://seusite.com/musica_batalha.mp3'
+        d: 'https://files.catbox.moe/e5f1s7.mp3',
+        n: '',
+        i: ''
       }
     },
-	// === MAPA 2 ===
-    '2': { 
-      img: {
-        d: 'https://i.imgur.com/l33W47q.jpeg', // Cole seus links aqui
-        n: 'https://i.imgur.com/pYwiL52.jpeg',
-        i: 'https://i.imgur.com/VHD9fQs.jpeg'
-      },
-      audio: { d: '', n: '', i: '' } 
-    },
-	// === MAPA 3 ===
+    // === MAPA 3 ===
     '3': { 
       img: {
-        d: 'https://i.imgur.com/c0yg80W.jpeg', // Cole seus links aqui
+        d: 'https://i.imgur.com/c0yg80W.jpeg', 
         n: 'https://i.imgur.com/W54GwTN.jpeg',
         i: 'https://i.imgur.com/mvmS1Un.jpeg'
       },
       audio: { d: '', n: '', i: '' } 
     },
-	// === MAPA 4 ===
+    // === MAPA 4 ===
     '4': { 
       img: {
-        d: 'https://i.imgur.com/Ixd3Orw.jpeg', // Cole seus links aqui
+        d: 'https://i.imgur.com/Ixd3Orw.jpeg', 
         n: 'https://i.imgur.com/SGDOfYS.jpeg',
         i: 'https://i.imgur.com/oQn27ML.jpeg'
       },
       audio: { d: '', n: '', i: '' } 
     },
-	// === MAPA 5 ===
+    // === MAPA 5 ===
     '5': { 
       img: {
-        d: 'https://i.imgur.com/snuoKNG.jpeg', // Cole seus links aqui
+        d: 'https://i.imgur.com/snuoKNG.jpeg', 
         n: 'https://i.imgur.com/6cOkclv.jpeg',
         i: 'https://i.imgur.com/eH3gWOm.png'
       },
       audio: { d: '', n: '', i: '' } 
     },
-		// === MAPA 6 ===
+    // === MAPA 6 ===
     '6': { 
       img: {
-        d: 'https://i.imgur.com/snuoKNG.jpeg', // Cole seus links aqui
+        d: 'https://i.imgur.com/snuoKNG.jpeg', 
         n: 'https://i.imgur.com/6cOkclv.jpeg',
         i: 'https://i.imgur.com/eH3gWOm.png'
       },
@@ -258,8 +279,7 @@ const CONFIG = {
     '7': { 
       img: { d: 'https://i.imgur.com/l33W47q.jpeg', n: '', i: '' },
       audio: { d: '', n: '', i: '' } 
-    },
-
+    }
   },
   
   listaStatus: [
@@ -272,7 +292,7 @@ const CONFIG = {
     { nome: "Jogador 2", classe: "Mago", hpMax: 30, hpAtual: 30, status: "", posicao: "norte" }
   ],
   volume: 0.5, 
-  saveKey: "rpg_dm_v31_external"
+  saveKey: "rpg_dm_v36_timer_fix"
 };
 
 const ui = {
@@ -286,7 +306,11 @@ let estadoAtual = { mapa: '1', modo: 'd', audio: true };
 let tvVisible = false; let lastDiceRoll = { val: 0, id: 0 }; 
 let isRemote = false; let modoEdicao = false;
 let faixaAtiva = 'A'; let trilhaAtualUrl = "";
-let peer = null; let conn = null; let roomName = ""; let peerIdPrefix = "rpg-sys-v31-";
+let peer = null; let conn = null; let roomName = ""; let peerIdPrefix = "rpg-sys-v36-";
+
+// Variáveis Globais para Controle de Tempo
+let diceTimeout = null;
+let diceInterval = null;
 
 ui.faixaA = new Audio(); ui.faixaA.loop = true; ui.faixaA.volume = 0;
 ui.faixaB = new Audio(); ui.faixaB.loop = true; ui.faixaB.volume = 0;
@@ -297,6 +321,7 @@ async function startApp(mode) {
   document.getElementById("login-screen").style.display = "none";
   document.getElementById("game-container").style.display = "block";
   isRemote = (mode === 'remote');
+  window.focus(); 
   try { if (navigator.wakeLock) await navigator.wakeLock.request('screen'); } catch(e){}
   if (isRemote) {
     document.body.classList.add("remote-active");
@@ -358,16 +383,51 @@ function sendSync() {
 }
 function fullUpdate() { updateUI(); carregarCena(); sendSync(); }
 
-/* --- DADOS --- */
+/* --- DADOS (CORRIGIDO: LIMPEZA DE TIMERS + 5s) --- */
 function rolarD20() {
   const val = Math.floor(Math.random() * 20) + 1;
   lastDiceRoll = { val: val, id: Date.now() }; showDiceVisual(val); fullUpdate();
 }
+
 function showDiceVisual(val) {
-  ui.diceDisplay.innerText = val; ui.diceDisplay.style.color = val===20?"#2ecc71":(val===1?"#e74c3c":"#f1c40f");
+  ui.diceDisplay.innerText = val; 
+  ui.diceDisplay.style.color = val===20?"#2ecc71":(val===1?"#e74c3c":"#f1c40f");
+  
   if(!isRemote) {
-    ui.tvDiceOverlay.innerText = val; ui.tvDiceOverlay.style.borderColor = val===20?"#2ecc71":(val===1?"#e74c3c":"#fff");
-    ui.tvDiceOverlay.classList.add("show"); setTimeout(() => ui.tvDiceOverlay.classList.remove("show"), 3000);
+    const ov = ui.tvDiceOverlay;
+    
+    // 1. Limpar timers antigos (CORREÇÃO DE BUG)
+    if(diceInterval) clearInterval(diceInterval);
+    if(diceTimeout) clearTimeout(diceTimeout);
+
+    // 2. Resetar
+    ov.className = "rolling"; 
+    ov.style.opacity = "1";
+    ov.style.transform = "translate(-50%, -50%) scale(1)";
+    
+    // 3. Suspense Loop
+    diceInterval = setInterval(() => {
+        ov.innerText = Math.floor(Math.random() * 20) + 1;
+    }, 80);
+
+    // 4. Impacto Final após 2 segundos
+    diceTimeout = setTimeout(() => {
+        clearInterval(diceInterval);
+        ov.innerText = val;
+        ov.className = "impact"; // Aplica o zoom e impacto
+        
+        // Aplica a cor do resultado
+        if(val === 20) ov.classList.add("crit-20");
+        else if(val === 1) ov.classList.add("crit-1");
+        else ov.classList.add("normal");
+
+        // 5. Esconder APÓS 5 SEGUNDOS (Pedido do usuário)
+        diceTimeout = setTimeout(() => {
+            ov.style.opacity = "0";
+            ov.style.transform = "translate(-50%, -50%) scale(0)";
+        }, 5000); // 5000ms = 5 segundos na tela
+
+    }, 2000); // 2000ms = 2 segundos de suspense
   }
 }
 
@@ -464,7 +524,7 @@ function audioCrossfade(urlNovo) {
   const ent = faixaAtiva === 'A' ? ui.faixaB : ui.faixaA;
   const sai = faixaAtiva === 'A' ? ui.faixaA : ui.faixaB;
   faixaAtiva = faixaAtiva === 'A' ? 'B' : 'A';
-  ent.src = urlNovo; ent.volume = 0; // USA O LINK DIRETO
+  ent.src = urlNovo; ent.volume = 0; 
   if (estadoAtual.audio) ent.play().catch(()=>{});
   let vol = 0; if(window.fadeInt) clearInterval(window.fadeInt);
   window.fadeInt = setInterval(() => {
@@ -477,15 +537,11 @@ function carregarCena() {
   if(isRemote) return; 
   const mapaConf = CONFIG.mapas[estadoAtual.mapa]; 
   if(!mapaConf) return;
-
-  // Carrega Imagem usando URL direta
   const urlImg = mapaConf.img[estadoAtual.modo];
   if (urlImg) {
     const img = new Image(); img.src = urlImg;
     img.onload = () => { ui.visual.style.backgroundImage = `url('${urlImg}')`; };
   }
-
-  // Carrega Áudio usando URL direta
   const urlAudio = mapaConf.audio[estadoAtual.modo];
   if (urlAudio && urlAudio !== "") audioCrossfade(urlAudio);
 }
@@ -497,11 +553,18 @@ window.toggleHUDVisibility = () => { document.getElementById('hud-mestre').class
 
 document.addEventListener("keydown", (e) => {
   if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+  
+  // ATALHOS FORÇADOS
+  const key = e.key.toLowerCase();
+  
+  if (key === 'h') {
+    e.preventDefault(); 
+    if(!isRemote) toggleHUDVisibility();
+  }
+  
   if(!isRemote) {
-    const key = e.key.toLowerCase();
     if(CONFIG.mapas[key]) mudarCenario(key);
     if(CONFIG.estados[key]) mudarModo(key);
-    if(key === 'h') toggleHUDVisibility();
     if(key === 't') toggleTvVisibility();
   }
 });
