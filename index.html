@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>RPG DM Station - V42 Audio FX</title>
+<title>RPG DM Station - V45 Layout Fix</title>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <style>
@@ -59,9 +59,16 @@
   #handout-layer.visivel { display: flex; opacity: 1; }
   #handout-img { max-width: 95%; max-height: 95%; border: 2px solid #fff; box-shadow: 0 0 30px #000; }
 
-  /* --- HUD --- */
-  #hud-mestre { position: absolute; top: 0; right: 0; width: 320px; height: 100%; background: rgba(18, 18, 18, 0.98); border-left: 1px solid #333; display: flex; flex-direction: column; z-index: 50; transition: transform 0.3s ease; }
+  /* --- HUD MESTRE (TV - BARRA LATERAL) --- */
+  #hud-mestre { 
+    position: absolute; top: 0; right: 0; 
+    width: 320px; height: 100%; 
+    background: rgba(18, 18, 18, 0.98); border-left: 1px solid #333; 
+    display: flex; flex-direction: column; z-index: 50; 
+    transition: transform 0.3s ease; 
+  }
   #hud-mestre.oculto { transform: translateX(100%); }
+  
   .hud-header { padding: 10px; background: #151515; border-bottom: 1px solid #333; flex-shrink: 0; }
   .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
   .btn-gear { background: none; border: none; color: #555; font-size: 20px; padding: 0 10px; cursor: pointer; }
@@ -69,60 +76,83 @@
   .hud-content { flex: 1; overflow-y: auto; padding: 10px; }
   .hud-footer { padding: 10px; background: #151515; border-top: 1px solid #333; flex-shrink: 0; }
 
-  /* --- CONTROLES --- */
-  .dice-wrapper { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; background: #222; padding: 8px; border-radius: 8px; border: 1px solid #333; }
-  .btn-dice { flex: 1; padding: 12px; background: #333; color: #fff; border: 1px solid #555; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; }
-  .btn-dice:disabled { opacity: 0.5; cursor: not-allowed; }
-  #dice-display { width: 50px; font-size: 28px; font-weight: bold; text-align: center; color: #f1c40f; }
+  /* --- MODO CONTROLE (RESPONSIVO E FIXO) --- */
+  body.remote-active #hud-mestre {
+    width: 100% !important; 
+    height: 100% !important;
+    position: fixed; top: 0; left: 0;
+    transform: none !important; /* Força visibilidade */
+    border: none;
+    background: #121212;
+    z-index: 9999;
+  }
+  
+  /* Centralizar no PC/Tablet para não ficar esticado */
+  @media (min-width: 768px) {
+    body.remote-active .hud-header, 
+    body.remote-active .hud-content, 
+    body.remote-active .hud-footer {
+        max-width: 600px; 
+        margin: 0 auto;
+        border-left: 1px solid #333;
+        border-right: 1px solid #333;
+    }
+  }
 
-  .grid-maps { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 8px; }
-  .grid-actions { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+  /* --- CONTROLES GERAIS --- */
+  .dice-wrapper { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; background: #222; padding: 12px; border-radius: 8px; border: 1px solid #333; }
+  .btn-dice { flex: 1; padding: 16px; background: #333; color: #fff; border: 1px solid #555; border-radius: 6px; font-weight: bold; font-size: 18px; cursor: pointer; }
+  .btn-dice:disabled { opacity: 0.5; cursor: not-allowed; }
+  #dice-display { width: 50px; font-size: 32px; font-weight: bold; text-align: center; color: #f1c40f; }
+
+  .grid-maps { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 15px; }
+  .grid-actions { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
   #btn-mod-d, #btn-mod-n, #btn-mod-i { grid-column: span 2; }
   #btn-music, #btn-tv-vis { grid-column: span 3; }
 
   /* FX GRID */
-  .grid-fx { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 5px; margin-bottom: 15px;}
-  .btn-fx { padding: 10px; background: #444; border: 1px solid #666; color: #fff; border-radius: 6px; cursor: pointer; font-size: 14px; }
+  .grid-fx { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 5px; margin-bottom: 15px;}
+  .btn-fx { padding: 14px; background: #444; border: 1px solid #666; color: #fff; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight:bold;}
   .btn-fx:active { background: #666; transform: scale(0.95); }
   .btn-fx.blood-on { background: #c0392b; border-color: #e74c3c; color: #fff; box-shadow: 0 0 10px #c0392b; }
 
   /* SELECT & SHOW WRAPPERS */
-  .control-wrapper { display: flex; gap: 5px; margin-top: 5px; background: #222; padding: 5px; border-radius: 6px; border: 1px solid #333; align-items: center; }
+  .control-wrapper { display: flex; gap: 8px; margin-top: 8px; background: #222; padding: 8px; border-radius: 6px; border: 1px solid #333; align-items: center; }
   .label-tiny { font-size: 10px; color: #888; width: 50px; text-transform: uppercase; font-weight: bold; }
-  .select-box { flex: 1; background: #111; border: 1px solid #444; color: #ccc; padding: 8px; border-radius: 4px; font-size: 12px; }
-  .btn-show { padding: 8px 12px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; }
+  .select-box { flex: 1; background: #111; border: 1px solid #444; color: #ccc; padding: 12px; border-radius: 4px; font-size: 16px; /* Fonte maior p/ mobile */ }
+  .btn-show { padding: 10px 15px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; }
   .btn-show:active { background: #2980b9; }
-  .btn-hide { padding: 8px; background: #442222; border: 1px solid #c0392b; color: #fff; border-radius: 4px; cursor: pointer; font-size: 11px; }
+  .btn-hide { padding: 10px; background: #442222; border: 1px solid #c0392b; color: #fff; border-radius: 4px; cursor: pointer; font-size: 14px; }
 
-  .btn-ctrl { padding: 12px 0; background: #2a2a2a; border: 1px solid #444; color: #888; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.1s; }
+  .btn-ctrl { padding: 16px 0; background: #2a2a2a; border: 1px solid #444; color: #888; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.1s; }
   .btn-ctrl.active { background: #3498db; color: #fff; border-color: #5dade2; }
   .btn-ctrl.tv-active { background: #27ae60; color: #fff; border-color: #2ecc71; }
   .btn-ctrl.music-on { background: #2ecc71; color: #fff; border-color: #27ae60; }
   .btn-ctrl.music-off { background: #e74c3c; color: #fff; border-color: #c0392b; }
 
   /* --- CARDS --- */
-  .mestre-card { background: #222; border-radius: 8px; padding: 10px; margin-bottom: 10px; border-left: 4px solid #555; position: relative; }
+  .mestre-card { background: #222; border-radius: 8px; padding: 12px; margin-bottom: 12px; border-left: 4px solid #555; position: relative; }
   .card-top { display: flex; justify-content: space-between; margin-bottom: 5px; }
-  .input-nome { background: transparent; border: none; color: #fff; font-weight: bold; font-size: 16px; width: 100%; outline: none; }
-  .input-classe { background: transparent; border: none; color: #888; font-size: 12px; width: 100%; outline: none; text-transform: uppercase; }
-  .bar-container { margin: 8px 0; }
-  .hp-bar-bg { background: #111; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 3px; }
-  .mp-bar-bg { background: #111; height: 6px; border-radius: 3px; overflow: hidden; } 
+  .input-nome { background: transparent; border: none; color: #fff; font-weight: bold; font-size: 18px; width: 100%; outline: none; }
+  .input-classe { background: transparent; border: none; color: #888; font-size: 14px; width: 100%; outline: none; text-transform: uppercase; }
+  .bar-container { margin: 10px 0; }
+  .hp-bar-bg { background: #111; height: 12px; border-radius: 6px; overflow: hidden; margin-bottom: 4px; }
+  .mp-bar-bg { background: #111; height: 8px; border-radius: 4px; overflow: hidden; } 
   .hp-bar-fill { height: 100%; transition: width 0.3s; }
   .mp-bar-fill { height: 100%; transition: width 0.3s; background: #3498db; box-shadow: 0 0 5px #3498db; }
   .hp-verde { background: #2ecc71; } .hp-amarelo { background: #f1c40f; } .hp-vermelho { background: #e74c3c; }
-  .status-text-row { display: flex; justify-content: space-between; font-size: 11px; color: #aaa; margin-bottom: 2px; }
-  .card-actions { display: flex; gap: 3px; margin-top: 5px; }
-  .btn-dmg { flex: 1; padding: 8px 0; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
+  .status-text-row { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; margin-bottom: 2px; }
+  
+  .card-actions { display: flex; gap: 5px; margin-top: 8px; }
+  .btn-dmg { flex: 1; padding: 14px 0; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
   .btn-dmg.heal { color: #2ecc71; border-color: #27ae60; } 
   .btn-dmg.harm { color: #e74c3c; border-color: #c0392b; }
   .btn-dmg.mana-add { color: #3498db; border-color: #2980b9; }
   .btn-dmg.mana-sub { color: #5dade2; border-color: #2980b9; opacity: 0.8; }
   .card-settings { display: flex; gap: 5px; margin-top: 8px; }
-  .select-style { flex: 1; background: #151515; border: 1px solid #333; color: #aaa; padding: 8px; border-radius: 4px; font-size: 12px; }
+  .select-style { flex: 1; background: #151515; border: 1px solid #333; color: #aaa; padding: 10px; border-radius: 4px; font-size: 14px; }
 
   /* --- TV SPECIFIC --- */
-  body.remote-active #hud-mestre { width: 100vw; height: 100vh; position: fixed; left: 0; top: 0; border: none; transform: none !important; }
   body.remote-active #mapa-visual, body.remote-active #tv-layer, body.remote-active #tv-dice-overlay, body.remote-active #handout-layer, body.remote-active #fx-layer { display: none !important; }
   #tv-layer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 20; display: none; }
   #tv-layer.visivel { display: block; }
@@ -188,7 +218,7 @@
   </div>
   <div id="tv-dice-overlay"></div>
 
-  <div id="hud-mestre">
+  <div id="hud-mestre" class="oculto">
     <div class="hud-header">
       <div class="header-top">
         <span style="font-weight:bold; color:#fff;">CONTROLE</span>
@@ -262,16 +292,16 @@ const CONFIG = {
     '7': { img: { d: 'https://i.imgur.com/l33W47q.jpeg', n: '', i: '' }, audio: { d: '', n: '', i: '' } }
   },
   
-  // === LINKS DOS EFEITOS SONOROS (Preencha com seus links) ===
+  // === SFX LINKS ===
   sfx: {
-    'dano': 'https://files.catbox.moe/04s1r0.mp3',   // Ex: https://files.catbox.moe/punch.mp3
-    'cura': 'https://files.catbox.moe/5smutd.mp3',   // Ex: https://files.catbox.moe/heal.mp3
-    'mana': 'https://files.catbox.moe/b6tc2t.mp3',   // Ex: https://files.catbox.moe/mana.mp3
-    'tremor': 'https://files.catbox.moe/50fhvn.mp3', // Ex: https://files.catbox.moe/rumble.mp3
-    'flash': 'https://files.catbox.moe/w7i7zb.mp3',  // Ex: https://files.catbox.moe/thunder.mp3
-    'carta': 'https://files.catbox.moe/sieyxb.mp3',  // Ex: https://files.catbox.moe/paper.mp3
-    'latido': 'https://files.catbox.moe/9qp44s.mp3',  // Ex: https://files.catbox.moe/paper.mp3
-    'inimigo': 'https://files.catbox.moe/xd8amy.mp3' // Ex: https://files.catbox.moe/roar.mp3
+    'dano': 'https://files.catbox.moe/04s1r0.mp3',   
+    'cura': 'https://files.catbox.moe/5smutd.mp3',   
+    'mana': 'https://files.catbox.moe/b6tc2t.mp3',   
+    'tremor': 'https://files.catbox.moe/50fhvn.mp3', 
+    'flash': 'https://files.catbox.moe/w7i7zb.mp3',  
+    'carta': 'https://files.catbox.moe/sieyxb.mp3',  
+    'latido': 'https://files.catbox.moe/9qp44s.mp3',  
+    'inimigo': 'https://files.catbox.moe/xd8amy.mp3' 
   },
 
   handouts: {
@@ -287,13 +317,13 @@ const CONFIG = {
     'exame': 'https://i.imgur.com/mmpm2hP.png',
     'caçador': 'https://i.imgur.com/QbiPg7T.png',
     'experiemnto': 'https://i.imgur.com/tfm9Qla.png',
-	'observador': 'https://i.imgur.com/1sLQjR3.png',
+    'observador': 'https://i.imgur.com/1sLQjR3.png',
   },
 
   classesPadrao: ["Guerreiro", "Mago", "Ladino", "Clérigo", "Bárbaro", "Paladino", "Ranger", "Feiticeiro", "Bardo", "Druida", "Monge", "Bruxo", "Artífice"],
   listaStatus: [ { valor: "", label: "🟢 Saudável" }, { valor: "cansado", label: "🟡 Cansado" }, { valor: "critico", label: "🔴 Debilitado" }, { valor: "caido", label: "💀 Caído" }, { valor: "poison", label: "☠️ Envenenado" }, { valor: "invis", label: "👻 Invisível" } ],
   jogadores: [ { nome: "Jogador 1", classe: "Guerreiro", hpMax: 50, hpAtual: 50, mpMax: 20, mpAtual: 20, status: "", posicao: "sul" }, { nome: "Jogador 2", classe: "Mago", hpMax: 30, hpAtual: 30, mpMax: 50, mpAtual: 50, status: "", posicao: "norte" } ],
-  volume: 0.5, saveKey: "rpg_dm_v42_audiofx"
+  volume: 0.5, saveKey: "rpg_dm_v45_layout"
 };
 
 const ui = {
@@ -308,7 +338,7 @@ let estadoAtual = { mapa: '1', modo: 'd', audio: true, blood: false };
 let tvVisible = false; let lastDiceRoll = { val: 0, id: 0 }; 
 let isRemote = false; let modoEdicao = false;
 let faixaAtiva = 'A'; let trilhaAtualUrl = "";
-let peer = null; let conn = null; let roomName = ""; let peerIdPrefix = "rpg-sys-v42-";
+let peer = null; let conn = null; let roomName = ""; let peerIdPrefix = "rpg-sys-v45-";
 let diceTimeout = null; let diceInterval = null; let isDiceRolling = false;
 
 ui.faixaA = new Audio(); ui.faixaA.loop = true; ui.faixaA.volume = 0;
@@ -319,7 +349,17 @@ async function startApp(mode) {
   roomName = document.getElementById("room-name").value.trim().toLowerCase() || "mesa";
   document.getElementById("login-screen").style.display = "none";
   isRemote = (mode === 'remote');
-  if (!isRemote) { document.getElementById("audio-unlock").style.display = "flex"; } else { document.getElementById("game-container").style.display = "block"; setupPeer(null, peerIdPrefix + roomName); }
+  
+  if (!isRemote) { 
+    document.getElementById("audio-unlock").style.display = "flex"; 
+  } else { 
+    document.getElementById("game-container").style.display = "block"; 
+    // === CORREÇÃO DE BUG: Forçar exibição do HUD no celular ===
+    document.body.classList.add("remote-active");
+    document.getElementById('hud-mestre').classList.remove('oculto'); 
+    setupPeer(null, peerIdPrefix + roomName); 
+  }
+  
   window.focus(); try { if (navigator.wakeLock) await navigator.wakeLock.request('screen'); } catch(e){}
   populateSelect('sel-handout', CONFIG.handouts);
   populateSelect('sel-enemy', CONFIG.inimigos);
@@ -353,15 +393,12 @@ function handleConnection(c) {
   conn = c; conn.on('open', () => { ui.connStatus.className = 'online'; if(!isRemote) setTimeout(sendSync, 500); });
   conn.on('data', (data) => {
     if (data.heartbeat) return;
-    
-    // SFX & FX RECEIVER (TV ONLY)
     if (!isRemote) {
         if (data.type === 'sfx') { playSoundEffect(data.key); return; }
         if (data.type === 'fx') { showFx(data.effect); return; }
         if (data.type === 'handout') { showHandoutTV(data.url); return; }
         if (data.type === 'float') { showFloatingText(data.target, data.val, data.isMana); return; }
     }
-
     if(data.jogadores) CONFIG.jogadores = data.jogadores;
     if(data.estado) { estadoAtual = data.estado; applyAudioState(); carregarCena(); }
     if(data.tvVisible !== undefined) tvVisible = data.tvVisible;
@@ -402,67 +439,19 @@ function toggleTvVisibility() { btnAction(() => { tvVisible = !tvVisible; fullUp
 function toggleHUDVisibility() { document.getElementById('hud-mestre').classList.toggle('oculto'); }
 function toggleMusic() { btnAction(() => { estadoAtual.audio = !estadoAtual.audio; applyAudioState(); fullUpdate(); }); }
 
-/* HANDOUTS & ENEMIES */
 function showHandoutFromList() { const url = document.getElementById('sel-handout').value; sendHandout(url, 'carta'); }
 function showEnemyFromList() { const url = document.getElementById('sel-enemy').value; sendHandout(url, 'inimigo'); }
 function hideHandout() { if(conn && conn.open) conn.send({ type: 'handout', url: null }); }
+function sendHandout(url, soundType) { if(conn && conn.open) { conn.send({ type: 'handout', url: url }); if(url) conn.send({ type: 'sfx', key: soundType }); } }
+function showHandoutTV(url) { if (url) { ui.handoutImg.src = url; ui.handoutLayer.classList.add("visivel"); } else { ui.handoutLayer.classList.remove("visivel"); } }
 
-function sendHandout(url, soundType) {
-    if(conn && conn.open) {
-        conn.send({ type: 'handout', url: url });
-        if(url) conn.send({ type: 'sfx', key: soundType }); // Toca som
-    }
-}
-
-function showHandoutTV(url) {
-  if (url) { ui.handoutImg.src = url; ui.handoutLayer.classList.add("visivel"); } 
-  else { ui.handoutLayer.classList.remove("visivel"); }
-}
-
-/* GLOBAL FX */
-function triggerFx(effect) { 
-    if(conn && conn.open) {
-        conn.send({ type: 'fx', effect: effect }); 
-        conn.send({ type: 'sfx', key: effect === 'shake' ? 'tremor' : 'flash' });
-    }
-    btnAction(()=>{}); 
-}
+function triggerFx(effect) { if(conn && conn.open) { conn.send({ type: 'fx', effect: effect }); conn.send({ type: 'sfx', key: effect === 'shake' ? 'tremor' : 'flash' }); } btnAction(()=>{}); }
 function toggleBlood() { estadoAtual.blood = !estadoAtual.blood; fullUpdate(); }
+function showFx(effect) { if (effect === 'flash') { ui.fxLayer.className = ""; void ui.fxLayer.offsetWidth; ui.fxLayer.classList.add("fx-flash"); } if (effect === 'shake') { document.body.classList.remove("fx-shake"); void document.body.offsetWidth; document.body.classList.add("fx-shake"); } }
 
-function showFx(effect) {
-  if (effect === 'flash') { ui.fxLayer.className = ""; void ui.fxLayer.offsetWidth; ui.fxLayer.classList.add("fx-flash"); }
-  if (effect === 'shake') { document.body.classList.remove("fx-shake"); void document.body.offsetWidth; document.body.classList.add("fx-shake"); }
-}
-
-/* FLOATING TEXT LOGIC & SOUND TRIGGERS */
-function sendFloat(idx, val, isMana=false) { 
-    if(conn && conn.open) {
-        conn.send({ type: 'float', target: idx, val: val, isMana: isMana });
-        // Envia som apropriado
-        if (isMana) conn.send({ type: 'sfx', key: 'mana' });
-        else conn.send({ type: 'sfx', key: val > 0 ? 'cura' : 'dano' });
-    }
-}
-
-function showFloatingText(targetIdx, val, isMana) {
-  const card = document.getElementById(`tv-card-${targetIdx}`);
-  if(!card) return;
-  const el = document.createElement("div");
-  el.className = "float-text " + (isMana ? "mana" : (val > 0 ? "heal" : "harm"));
-  el.innerText = (val > 0 ? "+" : "") + val;
-  card.appendChild(el);
-  setTimeout(() => el.remove(), 1500);
-}
-
-/* SFX PLAYER */
-function playSoundEffect(key) {
-    const url = CONFIG.sfx[key];
-    if (url && url !== "") {
-        const audio = new Audio(url);
-        audio.volume = 0.7; // Efeitos sonoros um pouco mais altos
-        audio.play().catch(e => console.log("Erro SFX:", e));
-    }
-}
+function sendFloat(idx, val, isMana=false) { if(conn && conn.open) { conn.send({ type: 'float', target: idx, val: val, isMana: isMana }); if (isMana) conn.send({ type: 'sfx', key: 'mana' }); else conn.send({ type: 'sfx', key: val > 0 ? 'cura' : 'dano' }); } }
+function showFloatingText(targetIdx, val, isMana) { const card = document.getElementById(`tv-card-${targetIdx}`); if(!card) return; const el = document.createElement("div"); el.className = "float-text " + (isMana ? "mana" : (val > 0 ? "heal" : "harm")); el.innerText = (val > 0 ? "+" : "") + val; card.appendChild(el); setTimeout(() => el.remove(), 1500); }
+function playSoundEffect(key) { const url = CONFIG.sfx[key]; if (url && url !== "") { const audio = new Audio(url); audio.volume = 0.7; audio.play().catch(e => console.log("Erro SFX:", e)); } }
 
 /* UI UPDATE */
 function updateUI(propagate = true) {
@@ -473,14 +462,10 @@ function updateUI(propagate = true) {
   
   const btnMusic = document.getElementById('btn-music');
   if(estadoAtual.audio) { btnMusic.classList.add('music-on'); btnMusic.innerText = "🎵 Som"; } else { btnMusic.classList.add('music-off'); btnMusic.innerText = "⏸️ Mudo"; }
-  
   const btnBlood = document.getElementById('btn-blood');
   if(estadoAtual.blood) btnBlood.classList.add('blood-on'); else btnBlood.classList.remove('blood-on');
 
-  if(!isRemote) { 
-    if(tvVisible) ui.tvLayer.classList.add("visivel"); else ui.tvLayer.classList.remove("visivel"); 
-    if(estadoAtual.blood) ui.fxLayer.classList.add("fx-blood"); else ui.fxLayer.classList.remove("fx-blood");
-  }
+  if(!isRemote) { if(tvVisible) ui.tvLayer.classList.add("visivel"); else ui.tvLayer.classList.remove("visivel"); if(estadoAtual.blood) ui.fxLayer.classList.add("fx-blood"); else ui.fxLayer.classList.remove("fx-blood"); }
 
   const dl = document.getElementById('lista-classes');
   if(dl) dl.innerHTML = CONFIG.classesPadrao.map(c => `<option value="${c}">`).join('');
@@ -592,5 +577,4 @@ document.addEventListener("keydown", (e) => {
 });
 </script>
 </body>
-
 </html>
