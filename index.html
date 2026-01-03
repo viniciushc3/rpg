@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>RPG DM Station - V37 Ultimate</title>
+<title>RPG DM Station - V39 Classes</title>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <style>
@@ -20,17 +20,9 @@
   .btn-tv-mode { background: #2980b9; border-bottom: 4px solid #1a5276; }
   .btn-remote-mode { background: #27ae60; border-bottom: 4px solid #196f3d; }
 
-  /* --- AUDIO UNLOCK OVERLAY (NOVO) --- */
-  #audio-unlock {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.95); z-index: 20000; display: none;
-    flex-direction: column; align-items: center; justify-content: center;
-    color: #fff; text-align: center;
-  }
-  .btn-unlock {
-    padding: 20px 40px; font-size: 24px; background: #27ae60; color: #fff;
-    border: none; border-radius: 50px; cursor: pointer; animation: pulseBtn 2s infinite;
-  }
+  /* --- AUDIO UNLOCK --- */
+  #audio-unlock { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); z-index: 20000; display: none; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-align: center; }
+  .btn-unlock { padding: 20px 40px; font-size: 24px; background: #27ae60; color: #fff; border: none; border-radius: 50px; cursor: pointer; animation: pulseBtn 2s infinite; }
   @keyframes pulseBtn { 0% { transform: scale(1); } 50% { transform: scale(1.05); box-shadow: 0 0 20px #27ae60; } 100% { transform: scale(1); } }
 
   /* --- STATUS BAR --- */
@@ -40,9 +32,7 @@
 
   /* --- LAYOUT --- */
   #game-container { position: relative; width: 100vw; height: 100vh; display: none; }
-  
-  /* --- VISUAIS --- */
-  #mapa-visual { width: 100%; height: 100%; background-size: cover; background-position: center; transition: filter 0.5s ease; }
+  #mapa-visual { width: 100%; height: 100%; background-size: cover; background-position: center; transition: background-image 0.5s ease-in-out; }
   .modo-dia #mapa-visual { filter: brightness(1) contrast(1.05); }
   .modo-noite #mapa-visual { filter: brightness(0.5) contrast(1.2) hue-rotate(-15deg); }
   .modo-invertido #mapa-visual { filter: invert(1) hue-rotate(180deg) brightness(0.8) contrast(1.3); }
@@ -79,20 +69,28 @@
   .card-top { display: flex; justify-content: space-between; margin-bottom: 5px; }
   .input-nome { background: transparent; border: none; color: #fff; font-weight: bold; font-size: 16px; width: 100%; outline: none; }
   .input-classe { background: transparent; border: none; color: #888; font-size: 12px; width: 100%; outline: none; text-transform: uppercase; }
-  .hp-bar-bg { background: #111; height: 10px; border-radius: 5px; overflow: hidden; margin: 8px 0; }
+  
+  .bar-container { margin: 8px 0; }
+  .hp-bar-bg { background: #111; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 3px; }
+  .mp-bar-bg { background: #111; height: 6px; border-radius: 3px; overflow: hidden; } 
   .hp-bar-fill { height: 100%; transition: width 0.3s; }
+  .mp-bar-fill { height: 100%; transition: width 0.3s; background: #3498db; box-shadow: 0 0 5px #3498db; }
   .hp-verde { background: #2ecc71; } .hp-amarelo { background: #f1c40f; } .hp-vermelho { background: #e74c3c; }
-  .card-actions { display: flex; gap: 5px; margin-top: 8px; }
-  .btn-dmg { flex: 1; padding: 12px; background: #333; border: 1px solid #444; color: #fff; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; }
-  .btn-dmg.heal { color: #2ecc71; } .btn-dmg.harm { color: #e74c3c; }
+  .status-text-row { display: flex; justify-content: space-between; font-size: 11px; color: #aaa; margin-bottom: 2px; }
+
+  .card-actions { display: flex; gap: 3px; margin-top: 5px; }
+  .btn-dmg { flex: 1; padding: 8px 0; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
+  .btn-dmg.heal { color: #2ecc71; border-color: #27ae60; } 
+  .btn-dmg.harm { color: #e74c3c; border-color: #c0392b; }
+  .btn-dmg.mana-add { color: #3498db; border-color: #2980b9; }
+  .btn-dmg.mana-sub { color: #5dade2; border-color: #2980b9; opacity: 0.8; }
+
   .card-settings { display: flex; gap: 5px; margin-top: 8px; }
   .select-style { flex: 1; background: #151515; border: 1px solid #333; color: #aaa; padding: 8px; border-radius: 4px; font-size: 12px; }
 
-  /* --- REMOTE SPECIFIC --- */
+  /* --- TV SPECIFIC --- */
   body.remote-active #hud-mestre { width: 100vw; height: 100vh; position: fixed; left: 0; top: 0; border: none; transform: none !important; }
   body.remote-active #mapa-visual, body.remote-active #tv-layer, body.remote-active #tv-dice-overlay { display: none !important; }
-
-  /* --- TV SPECIFIC --- */
   #tv-layer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 20; display: none; }
   #tv-layer.visivel { display: block; }
   .zone { position: absolute; display: flex; align-items: center; justify-content: center; gap: 20px; pointer-events: none; }
@@ -106,29 +104,20 @@
   .tv-card { position: relative; pointer-events: auto; width: 260px; flex-shrink: 0; background: rgba(0, 0, 0, 0.9); border: 2px solid #666; border-radius: 12px; padding: 15px; box-shadow: 0 0 30px rgba(0,0,0,0.8); color: #fff; }
   .tv-name { font-size: 20px; font-weight: bold; margin-bottom: 5px; }
   .tv-status { text-align: center; font-weight: bold; font-size: 16px; margin-top: 10px; padding-top: 5px; border-top: 1px solid #444; color: #ddd; text-transform: uppercase; }
-  
+  .tv-vals { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 2px; }
+  .tv-hp-val { color: #2ecc71; } .tv-mp-val { color: #3498db; }
+
   /* COLORS & UTILS */
   .mestre-card[data-status="cansado"], .tv-card[data-status="cansado"] { border-color: #f1c40f !important; }
   .mestre-card[data-status="critico"], .tv-card[data-status="critico"] { border-color: #e74c3c !important; }
   .mestre-card[data-status="caido"], .tv-card[data-status="caido"] { border-color: #555 !important; opacity: 0.6; }
   .mestre-card[data-status="poison"], .tv-card[data-status="poison"] { border-color: #2ecc71 !important; }
-  
-  .hp-wrapper { display: flex; justify-content: space-between; font-size: 12px; color: #ccc; margin: 5px 0; }
-  
   .btn-delete { display: none; position: absolute; top: 5px; right: 5px; background: #c0392b; color: #fff; border: 1px solid #fff; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; z-index: 10; }
   .modo-edicao .btn-delete { display: block; }
   .modo-edicao .input-nome, .modo-edicao .input-classe { pointer-events: auto; border-bottom: 1px dashed #777; background: rgba(255,255,255,0.05); }
 
-  /* ================================================================= */
-  /* ANIMAÇÃO D20 (SUSPENSE) */
-  /* ================================================================= */
-  #tv-dice-overlay {
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
-    width: 300px; height: 300px; display: flex; align-items: center; justify-content: center;
-    background: rgba(0,0,0,0.95); border: 4px solid #888; border-radius: 50%;
-    font-size: 120px; font-weight: 900; color: #fff; z-index: 9999;
-    opacity: 0; pointer-events: none; transition: transform 0.1s;
-  }
+  /* DADOS ANIM */
+  #tv-dice-overlay { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 300px; height: 300px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.95); border: 4px solid #888; border-radius: 50%; font-size: 120px; font-weight: 900; color: #fff; z-index: 9999; opacity: 0; pointer-events: none; transition: transform 0.1s; }
   #tv-dice-overlay.rolling { opacity: 1; transform: translate(-50%, -50%) scale(1); animation: pulseRoll 0.1s infinite alternate; border-color: #fff; color: #fff; }
   #tv-dice-overlay.impact { transform: translate(-50%, -50%) scale(1.2); border-width: 8px; text-shadow: 0 0 30px currentColor; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
   #tv-dice-overlay.impact.crit-20 { border-color: #f1c40f; color: #f1c40f; box-shadow: 0 0 60px #2ecc71; }
@@ -136,10 +125,11 @@
   #tv-dice-overlay.impact.normal  { border-color: #3498db; color: #fff; box-shadow: 0 0 40px #3498db; }
   @keyframes pulseRoll { from { transform: translate(-50%, -50%) scale(0.9); } to { transform: translate(-50%, -50%) scale(1.0); } }
   @keyframes shake { 0%, 100% { transform: translate(-50%, -50%) scale(1.2); } 25% { transform: translate(-52%, -50%) scale(1.2); } 75% { transform: translate(-48%, -50%) scale(1.2); } }
-
 </style>
 </head>
 <body>
+
+<datalist id="lista-classes"></datalist>
 
 <div id="connection-status"></div>
 
@@ -216,62 +206,32 @@
 /* CONFIGURAÇÃO */
 const CONFIG = {
   mapas: {
-    // === MAPA 1 ===
-    '1': { 
-      img: {
-        d: 'https://i.imgur.com/t70Pggh.jpeg',
-        n: 'https://i.imgur.com/YG1uink.jpeg',
-        i: 'https://i.imgur.com/BSpsexk.jpeg'
-      },
-      audio: {
-        d: 'https://files.catbox.moe/2ztb9c.mp3',
-        n: 'https://seusite.com/musica_noite.mp3',
-        i: 'https://seusite.com/musica_batalha.mp3'
-      }
-    },
-    // === MAPA 2 ===
-    '2': { 
-      img: {
-        d: 'https://i.imgur.com/l33W47q.jpeg', 
-        n: 'https://i.imgur.com/pYwiL52.jpeg',
-        i: 'https://i.imgur.com/VHD9fQs.jpeg'
-      },
-      audio: {
-        d: 'https://files.catbox.moe/e5f1s7.mp3',
-        n: '',
-        i: ''
-      }
-    },
-    // === MAPA 3 ===
-    '3': { 
-      img: {
-        d: 'https://i.imgur.com/c0yg80W.jpeg', 
-        n: 'https://i.imgur.com/W54GwTN.jpeg',
-        i: 'https://i.imgur.com/mvmS1Un.jpeg'
-      },
-      audio: { d: '', n: '', i: '' } 
-    },
-    // MAPA 4
+    '1': { img: { d: 'https://i.imgur.com/t70Pggh.jpeg', n: 'https://i.imgur.com/YG1uink.jpeg', i: 'https://i.imgur.com/BSpsexk.jpeg' }, audio: { d: 'https://files.catbox.moe/2ztb9c.mp3', n: 'https://seusite.com/musica_noite.mp3', i: 'https://seusite.com/musica_batalha.mp3' } },
+    '2': { img: { d: 'https://i.imgur.com/l33W47q.jpeg', n: 'https://i.imgur.com/pYwiL52.jpeg', i: 'https://i.imgur.com/VHD9fQs.jpeg' }, audio: { d: 'https://files.catbox.moe/e5f1s7.mp3', n: '', i: '' } },
+    '3': { img: { d: 'https://i.imgur.com/c0yg80W.jpeg', n: 'https://i.imgur.com/W54GwTN.jpeg', i: 'https://i.imgur.com/mvmS1Un.jpeg' }, audio: { d: '', n: '', i: '' } },
     '4': { img: { d: 'https://i.imgur.com/Ixd3Orw.jpeg', n: 'https://i.imgur.com/SGDOfYS.jpeg', i: 'https://i.imgur.com/oQn27ML.jpeg' }, audio: { d: '', n: '', i: '' } },
-    // MAPA 5
     '5': { img: { d: 'https://i.imgur.com/snuoKNG.jpeg', n: 'https://i.imgur.com/6cOkclv.jpeg', i: 'https://i.imgur.com/eH3gWOm.png' }, audio: { d: '', n: '', i: '' } },
-    // MAPA 6
     '6': { img: { d: 'https://i.imgur.com/snuoKNG.jpeg', n: 'https://i.imgur.com/6cOkclv.jpeg', i: 'https://i.imgur.com/eH3gWOm.png' }, audio: { d: '', n: '', i: '' } },
-    // MAPA 7
     '7': { img: { d: 'https://i.imgur.com/l33W47q.jpeg', n: '', i: '' }, audio: { d: '', n: '', i: '' } }
   },
   
+  // Classes Padrão (Edite aqui para mudar as sugestões)
+  classesPadrao: [
+    "Guerreiro", "Mago", "Ladino", "Clérigo", "Bárbaro", "Paladino", 
+    "Ranger", "Feiticeiro", "Bardo", "Druida", "Monge", "Bruxo", "Artífice"
+  ],
+
   listaStatus: [
     { valor: "", label: "🟢 Saudável" }, { valor: "cansado", label: "🟡 Cansado" },
     { valor: "critico", label: "🔴 Debilitado" }, { valor: "caido", label: "💀 Caído" },
     { valor: "poison", label: "☠️ Envenenado" }, { valor: "invis", label: "👻 Invisível" }
   ],
   jogadores: [
-    { nome: "Jogador 1", classe: "Guerreiro", hpMax: 50, hpAtual: 50, status: "", posicao: "sul" },
-    { nome: "Jogador 2", classe: "Mago", hpMax: 30, hpAtual: 30, status: "", posicao: "norte" }
+    { nome: "Jogador 1", classe: "Guerreiro", hpMax: 50, hpAtual: 50, mpMax: 20, mpAtual: 20, status: "", posicao: "sul" },
+    { nome: "Jogador 2", classe: "Mago", hpMax: 30, hpAtual: 30, mpMax: 50, mpAtual: 50, status: "", posicao: "norte" }
   ],
   volume: 0.5, 
-  saveKey: "rpg_dm_v37_ultimate"
+  saveKey: "rpg_dm_v39_classes"
 };
 
 const ui = {
@@ -285,7 +245,7 @@ let estadoAtual = { mapa: '1', modo: 'd', audio: true };
 let tvVisible = false; let lastDiceRoll = { val: 0, id: 0 }; 
 let isRemote = false; let modoEdicao = false;
 let faixaAtiva = 'A'; let trilhaAtualUrl = "";
-let peer = null; let conn = null; let roomName = ""; let peerIdPrefix = "rpg-sys-v37-";
+let peer = null; let conn = null; let roomName = ""; let peerIdPrefix = "rpg-sys-v39-";
 let diceTimeout = null; let diceInterval = null; let isDiceRolling = false;
 
 ui.faixaA = new Audio(); ui.faixaA.loop = true; ui.faixaA.volume = 0;
@@ -298,14 +258,11 @@ async function startApp(mode) {
   isRemote = (mode === 'remote');
   
   if (!isRemote) {
-    // Se for TV, mostra o botão de desbloquear áudio
     document.getElementById("audio-unlock").style.display = "flex";
   } else {
-    // Se for controle, vai direto pro jogo
     document.getElementById("game-container").style.display = "block";
     setupPeer(null, peerIdPrefix + roomName);
   }
-  
   window.focus(); 
   try { if (navigator.wakeLock) await navigator.wakeLock.request('screen'); } catch(e){}
   
@@ -313,7 +270,6 @@ async function startApp(mode) {
   setInterval(() => { if (conn && conn.open) conn.send({ heartbeat: true }); }, 2000);
 }
 
-// Função para TV desbloquear áudio
 function unlockAudio() {
   ui.faixaA.play().then(() => ui.faixaA.pause());
   ui.faixaB.play().then(() => ui.faixaB.pause());
@@ -327,10 +283,7 @@ function unlockAudio() {
 function setupPeer(myId, connectToId) {
   if (peer) peer.destroy();
   peer = new Peer(myId);
-  peer.on('open', (id) => {
-    ui.connStatus.className = 'online';
-    if(connectToId) connect(connectToId);
-  });
+  peer.on('open', (id) => { ui.connStatus.className = 'online'; if(connectToId) connect(connectToId); });
   peer.on('connection', (c) => handleConnection(c));
   peer.on('error', (err) => {
     if(err.type === 'unavailable-id') { alert("Sala ocupada!"); location.reload(); }
@@ -349,10 +302,7 @@ function connect(targetId) {
 
 function handleConnection(c) {
   conn = c;
-  conn.on('open', () => {
-    ui.connStatus.className = 'online';
-    if(!isRemote) setTimeout(sendSync, 500);
-  });
+  conn.on('open', () => { ui.connStatus.className = 'online'; if(!isRemote) setTimeout(sendSync, 500); });
   conn.on('data', (data) => {
     if (data.heartbeat) return;
     if(data.jogadores) CONFIG.jogadores = data.jogadores;
@@ -361,83 +311,45 @@ function handleConnection(c) {
     if(data.dice && data.dice.id !== lastDiceRoll.id) { lastDiceRoll = data.dice; showDiceVisual(lastDiceRoll.val); }
     updateUI(false); salvarJogo(false);
   });
-  conn.on('close', () => {
-    ui.connStatus.className = 'reconnecting';
-    if (isRemote) setTimeout(() => connect(peerIdPrefix + roomName), 1000);
-  });
+  conn.on('close', () => { ui.connStatus.className = 'reconnecting'; if (isRemote) setTimeout(() => connect(peerIdPrefix + roomName), 1000); });
 }
 
-function sendSync() {
-  if(conn && conn.open) conn.send({ jogadores: CONFIG.jogadores, estado: estadoAtual, tvVisible: tvVisible, dice: lastDiceRoll });
-  salvarJogo();
-}
+function sendSync() { if(conn && conn.open) conn.send({ jogadores: CONFIG.jogadores, estado: estadoAtual, tvVisible: tvVisible, dice: lastDiceRoll }); salvarJogo(); }
 function fullUpdate() { updateUI(); carregarCena(); sendSync(); }
 
-/* --- DADOS (SUSPENSE + BLOCK) --- */
+/* --- DADOS --- */
 function rolarD20() {
-  if (isDiceRolling) return; // Bloqueia cliques duplos
-  isDiceRolling = true;
-  document.getElementById("btn-dice-roll").disabled = true;
-  
-  // VIBRATION HAPTIC
+  if (isDiceRolling) return;
+  isDiceRolling = true; document.getElementById("btn-dice-roll").disabled = true;
   if (navigator.vibrate) navigator.vibrate(50);
-
   const val = Math.floor(Math.random() * 20) + 1;
-  lastDiceRoll = { val: val, id: Date.now() }; 
-  showDiceVisual(val); 
-  fullUpdate();
-
-  // Libera o botão após o suspense (2s)
-  setTimeout(() => {
-    isDiceRolling = false;
-    document.getElementById("btn-dice-roll").disabled = false;
-  }, 2000);
+  lastDiceRoll = { val: val, id: Date.now() }; showDiceVisual(val); fullUpdate();
+  setTimeout(() => { isDiceRolling = false; document.getElementById("btn-dice-roll").disabled = false; }, 2000);
 }
 
 function showDiceVisual(val) {
-  ui.diceDisplay.innerText = val; 
-  ui.diceDisplay.style.color = val===20?"#2ecc71":(val===1?"#e74c3c":"#f1c40f");
-  
+  ui.diceDisplay.innerText = val; ui.diceDisplay.style.color = val===20?"#2ecc71":(val===1?"#e74c3c":"#f1c40f");
   if(!isRemote) {
     const ov = ui.tvDiceOverlay;
-    if(diceInterval) clearInterval(diceInterval);
-    if(diceTimeout) clearTimeout(diceTimeout);
-
-    ov.className = "rolling"; 
-    ov.style.opacity = "1";
-    ov.style.transform = "translate(-50%, -50%) scale(1)";
-    
+    if(diceInterval) clearInterval(diceInterval); if(diceTimeout) clearTimeout(diceTimeout);
+    ov.className = "rolling"; ov.style.opacity = "1"; ov.style.transform = "translate(-50%, -50%) scale(1)";
     diceInterval = setInterval(() => { ov.innerText = Math.floor(Math.random() * 20) + 1; }, 80);
-
     diceTimeout = setTimeout(() => {
-        clearInterval(diceInterval);
-        ov.innerText = val;
-        ov.className = "impact";
-        if(val === 20) ov.classList.add("crit-20");
-        else if(val === 1) ov.classList.add("crit-1");
-        else ov.classList.add("normal");
-
-        diceTimeout = setTimeout(() => {
-            ov.style.opacity = "0";
-            ov.style.transform = "translate(-50%, -50%) scale(0)";
-        }, 5000); 
+        clearInterval(diceInterval); ov.innerText = val; ov.className = "impact";
+        if(val === 20) ov.classList.add("crit-20"); else if(val === 1) ov.classList.add("crit-1"); else ov.classList.add("normal");
+        diceTimeout = setTimeout(() => { ov.style.opacity = "0"; ov.style.transform = "translate(-50%, -50%) scale(0)"; }, 5000); 
     }, 2000); 
   }
 }
 
-/* --- CONTROLES & VIBRATION --- */
-function btnAction(callback) {
-  if(navigator.vibrate) navigator.vibrate(30); // Vibra
-  callback();
-}
-
+/* --- LOGIC --- */
+function btnAction(callback) { if(navigator.vibrate) navigator.vibrate(30); callback(); }
 function mudarCenario(id) { btnAction(() => { estadoAtual.mapa = id; fullUpdate(); }); }
 function mudarModo(id) { btnAction(() => { estadoAtual.modo = id; fullUpdate(); }); }
 function toggleTvVisibility() { btnAction(() => { tvVisible = !tvVisible; fullUpdate(); }); }
 function toggleHUDVisibility() { document.getElementById('hud-mestre').classList.toggle('oculto'); }
 function toggleMusic() { btnAction(() => { estadoAtual.audio = !estadoAtual.audio; applyAudioState(); fullUpdate(); }); }
 
-/* --- RENDER UI --- */
 function updateUI(propagate = true) {
   document.querySelectorAll('.btn-ctrl').forEach(b => { b.classList.remove('active', 'tv-active', 'music-on', 'music-off'); });
   if(document.getElementById('btn-map-' + estadoAtual.mapa)) document.getElementById('btn-map-' + estadoAtual.mapa).classList.add('active');
@@ -449,9 +361,14 @@ function updateUI(propagate = true) {
 
   if(!isRemote) { if(tvVisible) ui.tvLayer.classList.add("visivel"); else ui.tvLayer.classList.remove("visivel"); }
 
+  // POPULA DATALIST DE CLASSES
+  const dl = document.getElementById('lista-classes');
+  dl.innerHTML = CONFIG.classesPadrao.map(c => `<option value="${c}">`).join('');
+
   ui.mestreList.innerHTML = ""; Object.values(ui.zones).forEach(z => z.innerHTML = "");
   CONFIG.jogadores.forEach((char, idx) => {
     const pct = Math.max(0, Math.min(100, (char.hpAtual / char.hpMax) * 100));
+    const pctMp = Math.max(0, Math.min(100, (char.mpAtual / char.mpMax) * 100));
     let cor = "hp-verde"; if (pct < 50) cor = "hp-amarelo"; if (pct < 20) cor = "hp-vermelho"; if (char.hpAtual <= 0) cor = "hp-morto";
     const statusObj = CONFIG.listaStatus.find(s => s.valor === char.status);
     const statusTxt = statusObj ? statusObj.label : "";
@@ -463,10 +380,15 @@ function updateUI(propagate = true) {
 
     mCard.innerHTML = `
       <div class="card-top"><input type="text" class="input-nome" value="${char.nome}" onchange="edit(${idx},'nome',this.value)"><button class="btn-delete" onclick="remover(${idx})">✕</button></div>
-      <input type="text" class="input-classe" value="${char.classe}" onchange="edit(${idx},'classe',this.value)">
-      <div class="hp-bar-bg"><div class="hp-bar-fill ${cor}" style="width:${pct}%"></div></div>
-      <div class="hp-wrapper"><span>${Math.ceil(char.hpAtual)} / ${char.hpMax}</span></div>
+      <input type="text" class="input-classe" list="lista-classes" value="${char.classe}" onchange="edit(${idx},'classe',this.value)">
+      <div class="bar-container">
+        <div class="status-text-row"><span>PV: ${Math.ceil(char.hpAtual)}/${char.hpMax}</span></div>
+        <div class="hp-bar-bg"><div class="hp-bar-fill ${cor}" style="width:${pct}%"></div></div>
+        <div class="status-text-row"><span>MP: ${Math.ceil(char.mpAtual)}/${char.mpMax}</span></div>
+        <div class="mp-bar-bg"><div class="mp-bar-fill" style="width:${pctMp}%"></div></div>
+      </div>
       <div class="card-actions"><button class="btn-dmg harm" onclick="hp(${idx},-5)">-5</button><button class="btn-dmg harm" onclick="hp(${idx},-1)">-1</button><button class="btn-dmg heal" onclick="hp(${idx},1)">+1</button><button class="btn-dmg heal" onclick="hp(${idx},5)">+5</button></div>
+      <div class="card-actions"><button class="btn-dmg mana-sub" onclick="mp(${idx},-5)">MP-5</button><button class="btn-dmg mana-sub" onclick="mp(${idx},-1)">MP-1</button><button class="btn-dmg mana-add" onclick="mp(${idx},1)">MP+1</button><button class="btn-dmg mana-add" onclick="mp(${idx},5)">MP+5</button></div>
       <div class="card-settings"><select class="select-style" onchange="st(${idx},this.value)">${stOpts}</select><select class="select-style" onchange="edit(${idx},'posicao',this.value)"><option value="sul" ${pSul}>Sul</option><option value="norte" ${pNorte}>Norte</option><option value="leste" ${pLeste}>Leste</option><option value="oeste" ${pOeste}>Oeste</option></select></div>
     `;
     ui.mestreList.appendChild(mCard);
@@ -476,8 +398,9 @@ function updateUI(propagate = true) {
       tCard.innerHTML = `
         <div class="tv-name">${char.nome}</div>
         <div style="font-size:12px;color:#aaa;text-transform:uppercase;margin-bottom:5px;">${char.classe}</div>
-        <div class="hp-wrapper" style="font-size:14px;font-weight:bold;color:#fff;"><span>PV</span><span>${Math.ceil(char.hpAtual)} / ${char.hpMax}</span></div>
-        <div class="hp-bar-bg" style="height:15px;margin:0 0 10px 0;"><div class="hp-bar-fill ${cor}" style="width:${pct}%"></div></div>
+        <div class="tv-vals"><span class="tv-hp-val">PV ${Math.ceil(char.hpAtual)}</span><span class="tv-mp-val">MP ${Math.ceil(char.mpAtual)}</span></div>
+        <div class="hp-bar-bg" style="height:12px;margin:0 0 4px 0;"><div class="hp-bar-fill ${cor}" style="width:${pct}%"></div></div>
+        <div class="mp-bar-bg" style="height:8px;margin:0 0 10px 0;"><div class="mp-bar-fill" style="width:${pctMp}%"></div></div>
         <div class="tv-status">${statusTxt}</div>
       `;
       (ui.zones[char.posicao] || ui.zones.sul).appendChild(tCard);
@@ -486,31 +409,26 @@ function updateUI(propagate = true) {
 }
 
 window.hp=(idx,val)=>{const c=CONFIG.jogadores[idx];c.hpAtual+=val;if(c.hpAtual>c.hpMax)c.hpAtual=c.hpMax;if(c.hpAtual<0)c.hpAtual=0;const pct=(c.hpAtual/c.hpMax)*100;if(c.hpAtual<=0){c.status="caido";}else{const l=["","cansado","critico","caido"];if(l.includes(c.status)){if(pct<20)c.status="critico";else if(pct<50)c.status="cansado";else c.status="";}}fullUpdate();}
+window.mp=(idx,val)=>{const c=CONFIG.jogadores[idx];c.mpAtual+=val;if(c.mpAtual>c.mpMax)c.mpAtual=c.mpMax;if(c.mpAtual<0)c.mpAtual=0;fullUpdate();}
 window.st=(idx,val)=>{CONFIG.jogadores[idx].status=val;fullUpdate();}
 window.edit=(idx,f,v)=>{CONFIG.jogadores[idx][f]=v;fullUpdate();}
-window.adicionarJogador=()=>{CONFIG.jogadores.push({nome:"Novo",classe:"Heroi",hpMax:30,hpAtual:30,status:"",posicao:"sul"});fullUpdate();}
+window.adicionarJogador=()=>{CONFIG.jogadores.push({nome:"Novo",classe:"Heroi",hpMax:30,hpAtual:30,mpMax:10,mpAtual:10,status:"",posicao:"sul"});fullUpdate();}
 window.remover=(idx)=>{if(confirm("Excluir?")){CONFIG.jogadores.splice(idx,1);fullUpdate();}}
 window.toggleEdicao=()=>{modoEdicao=!modoEdicao;ui.btnEdit.classList.toggle("ativo");document.getElementById("hud-mestre").classList.toggle("modo-edicao");}
 
-/* --- AUDIO SMOOTH --- */
 function applyAudioState() {
   if (isRemote) return;
   const active = faixaAtiva === 'A' ? ui.faixaA : ui.faixaB;
-  if (!estadoAtual.audio) fadeOutAndPause(active);
-  else if (active.src && active.paused) fadeInAndPlay(active);
+  if (!estadoAtual.audio) fadeOutAndPause(active); else if (active.src && active.paused) fadeInAndPlay(active);
 }
 function fadeOutAndPause(audio) {
   if(audio.fadeInt) clearInterval(audio.fadeInt);
-  audio.fadeInt = setInterval(() => {
-    if(audio.volume > 0.05) audio.volume -= 0.05; else { audio.volume = 0; audio.pause(); clearInterval(audio.fadeInt); }
-  }, 50);
+  audio.fadeInt = setInterval(() => { if(audio.volume > 0.05) audio.volume -= 0.05; else { audio.volume = 0; audio.pause(); clearInterval(audio.fadeInt); } }, 50);
 }
 function fadeInAndPlay(audio) {
   audio.volume = 0; audio.play().catch(()=>{});
   if(audio.fadeInt) clearInterval(audio.fadeInt);
-  audio.fadeInt = setInterval(() => {
-    if(audio.volume < CONFIG.volume - 0.05) audio.volume += 0.05; else { audio.volume = CONFIG.volume; clearInterval(audio.fadeInt); }
-  }, 50);
+  audio.fadeInt = setInterval(() => { if(audio.volume < CONFIG.volume - 0.05) audio.volume += 0.05; else { audio.volume = CONFIG.volume; clearInterval(audio.fadeInt); } }, 50);
 }
 function audioCrossfade(urlNovo) {
   if(urlNovo === trilhaAtualUrl) return; trilhaAtualUrl = urlNovo;
@@ -530,14 +448,8 @@ function carregarCena() {
   if(isRemote) return; 
   const mapaConf = CONFIG.mapas[estadoAtual.mapa]; 
   if(!mapaConf) return;
-  
-  // PRELOAD IMAGEM (Evita tela preta na troca)
   const urlImg = mapaConf.img[estadoAtual.modo];
-  if (urlImg) {
-    const img = new Image(); img.src = urlImg;
-    img.onload = () => { ui.visual.style.backgroundImage = `url('${urlImg}')`; };
-  }
-  
+  if (urlImg) { const img = new Image(); img.src = urlImg; img.onload = () => { ui.visual.style.backgroundImage = `url('${urlImg}')`; }; }
   const urlAudio = mapaConf.audio[estadoAtual.modo];
   if (urlAudio && urlAudio !== "") audioCrossfade(urlAudio);
 }
