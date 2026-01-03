@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>RPG DM Station - V36 Timer Fix</title>
+<title>RPG DM Station - V37 Ultimate</title>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <style>
@@ -20,6 +20,19 @@
   .btn-tv-mode { background: #2980b9; border-bottom: 4px solid #1a5276; }
   .btn-remote-mode { background: #27ae60; border-bottom: 4px solid #196f3d; }
 
+  /* --- AUDIO UNLOCK OVERLAY (NOVO) --- */
+  #audio-unlock {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.95); z-index: 20000; display: none;
+    flex-direction: column; align-items: center; justify-content: center;
+    color: #fff; text-align: center;
+  }
+  .btn-unlock {
+    padding: 20px 40px; font-size: 24px; background: #27ae60; color: #fff;
+    border: none; border-radius: 50px; cursor: pointer; animation: pulseBtn 2s infinite;
+  }
+  @keyframes pulseBtn { 0% { transform: scale(1); } 50% { transform: scale(1.05); box-shadow: 0 0 20px #27ae60; } 100% { transform: scale(1); } }
+
   /* --- STATUS BAR --- */
   #connection-status { position: fixed; top: 0; left: 0; width: 100%; height: 4px; z-index: 10000; background: #e74c3c; transition: background 0.3s; }
   #connection-status.online { background: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
@@ -29,7 +42,7 @@
   #game-container { position: relative; width: 100vw; height: 100vh; display: none; }
   
   /* --- VISUAIS --- */
-  #mapa-visual { width: 100%; height: 100%; background-size: cover; background-position: center; transition: background-image 0.5s ease-in-out; }
+  #mapa-visual { width: 100%; height: 100%; background-size: cover; background-position: center; transition: filter 0.5s ease; }
   .modo-dia #mapa-visual { filter: brightness(1) contrast(1.05); }
   .modo-noite #mapa-visual { filter: brightness(0.5) contrast(1.2) hue-rotate(-15deg); }
   .modo-invertido #mapa-visual { filter: invert(1) hue-rotate(180deg) brightness(0.8) contrast(1.3); }
@@ -47,6 +60,7 @@
   /* --- CONTROLES --- */
   .dice-wrapper { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; background: #222; padding: 8px; border-radius: 8px; border: 1px solid #333; }
   .btn-dice { flex: 1; padding: 12px; background: #333; color: #fff; border: 1px solid #555; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; }
+  .btn-dice:disabled { opacity: 0.5; cursor: not-allowed; }
   #dice-display { width: 50px; font-size: 28px; font-weight: bold; text-align: center; color: #f1c40f; }
 
   .grid-maps { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 8px; }
@@ -106,7 +120,7 @@
   .modo-edicao .input-nome, .modo-edicao .input-classe { pointer-events: auto; border-bottom: 1px dashed #777; background: rgba(255,255,255,0.05); }
 
   /* ================================================================= */
-  /* ANIMAÇÃO D20 (SUSPENSE + 5 SEGUNDOS) */
+  /* ANIMAÇÃO D20 (SUSPENSE) */
   /* ================================================================= */
   #tv-dice-overlay {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
@@ -115,27 +129,11 @@
     font-size: 120px; font-weight: 900; color: #fff; z-index: 9999;
     opacity: 0; pointer-events: none; transition: transform 0.1s;
   }
-
-  /* Fase 1: Rolando */
-  #tv-dice-overlay.rolling {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-    animation: pulseRoll 0.1s infinite alternate;
-    border-color: #fff; color: #fff;
-  }
-
-  /* Fase 2: Impacto Final */
-  #tv-dice-overlay.impact {
-    transform: translate(-50%, -50%) scale(1.2);
-    border-width: 8px;
-    text-shadow: 0 0 30px currentColor;
-    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  }
-
+  #tv-dice-overlay.rolling { opacity: 1; transform: translate(-50%, -50%) scale(1); animation: pulseRoll 0.1s infinite alternate; border-color: #fff; color: #fff; }
+  #tv-dice-overlay.impact { transform: translate(-50%, -50%) scale(1.2); border-width: 8px; text-shadow: 0 0 30px currentColor; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
   #tv-dice-overlay.impact.crit-20 { border-color: #f1c40f; color: #f1c40f; box-shadow: 0 0 60px #2ecc71; }
   #tv-dice-overlay.impact.crit-1  { border-color: #c0392b; color: #e74c3c; box-shadow: 0 0 60px #c0392b; animation: shake 0.4s ease-in-out; }
   #tv-dice-overlay.impact.normal  { border-color: #3498db; color: #fff; box-shadow: 0 0 40px #3498db; }
-
   @keyframes pulseRoll { from { transform: translate(-50%, -50%) scale(0.9); } to { transform: translate(-50%, -50%) scale(1.0); } }
   @keyframes shake { 0%, 100% { transform: translate(-50%, -50%) scale(1.2); } 25% { transform: translate(-52%, -50%) scale(1.2); } 75% { transform: translate(-48%, -50%) scale(1.2); } }
 
@@ -144,6 +142,11 @@
 <body>
 
 <div id="connection-status"></div>
+
+<div id="audio-unlock">
+  <h1 style="margin-bottom:30px;">🖥️ MODO TV</h1>
+  <button class="btn-unlock" onclick="unlockAudio()">🔊 CLIQUE PARA ATIVAR O SOM</button>
+</div>
 
 <div id="login-screen">
   <div class="login-box">
@@ -175,7 +178,7 @@
       </div>
 
       <div class="dice-wrapper">
-        <button class="btn-dice" onclick="rolarD20()">🎲 ROLAR D20 (SUSPENSE)</button>
+        <button class="btn-dice" id="btn-dice-roll" onclick="rolarD20()">🎲 ROLAR D20</button>
         <div id="dice-display">-</div>
       </div>
 
@@ -248,38 +251,14 @@ const CONFIG = {
       },
       audio: { d: '', n: '', i: '' } 
     },
-    // === MAPA 4 ===
-    '4': { 
-      img: {
-        d: 'https://i.imgur.com/Ixd3Orw.jpeg', 
-        n: 'https://i.imgur.com/SGDOfYS.jpeg',
-        i: 'https://i.imgur.com/oQn27ML.jpeg'
-      },
-      audio: { d: '', n: '', i: '' } 
-    },
-    // === MAPA 5 ===
-    '5': { 
-      img: {
-        d: 'https://i.imgur.com/snuoKNG.jpeg', 
-        n: 'https://i.imgur.com/6cOkclv.jpeg',
-        i: 'https://i.imgur.com/eH3gWOm.png'
-      },
-      audio: { d: '', n: '', i: '' } 
-    },
-    // === MAPA 6 ===
-    '6': { 
-      img: {
-        d: 'https://i.imgur.com/snuoKNG.jpeg', 
-        n: 'https://i.imgur.com/6cOkclv.jpeg',
-        i: 'https://i.imgur.com/eH3gWOm.png'
-      },
-      audio: { d: '', n: '', i: '' } 
-    },
-    // === MAPA 7 ===
-    '7': { 
-      img: { d: 'https://i.imgur.com/l33W47q.jpeg', n: '', i: '' },
-      audio: { d: '', n: '', i: '' } 
-    }
+    // MAPA 4
+    '4': { img: { d: 'https://i.imgur.com/Ixd3Orw.jpeg', n: 'https://i.imgur.com/SGDOfYS.jpeg', i: 'https://i.imgur.com/oQn27ML.jpeg' }, audio: { d: '', n: '', i: '' } },
+    // MAPA 5
+    '5': { img: { d: 'https://i.imgur.com/snuoKNG.jpeg', n: 'https://i.imgur.com/6cOkclv.jpeg', i: 'https://i.imgur.com/eH3gWOm.png' }, audio: { d: '', n: '', i: '' } },
+    // MAPA 6
+    '6': { img: { d: 'https://i.imgur.com/snuoKNG.jpeg', n: 'https://i.imgur.com/6cOkclv.jpeg', i: 'https://i.imgur.com/eH3gWOm.png' }, audio: { d: '', n: '', i: '' } },
+    // MAPA 7
+    '7': { img: { d: 'https://i.imgur.com/l33W47q.jpeg', n: '', i: '' }, audio: { d: '', n: '', i: '' } }
   },
   
   listaStatus: [
@@ -292,7 +271,7 @@ const CONFIG = {
     { nome: "Jogador 2", classe: "Mago", hpMax: 30, hpAtual: 30, status: "", posicao: "norte" }
   ],
   volume: 0.5, 
-  saveKey: "rpg_dm_v36_timer_fix"
+  saveKey: "rpg_dm_v37_ultimate"
 };
 
 const ui = {
@@ -306,11 +285,8 @@ let estadoAtual = { mapa: '1', modo: 'd', audio: true };
 let tvVisible = false; let lastDiceRoll = { val: 0, id: 0 }; 
 let isRemote = false; let modoEdicao = false;
 let faixaAtiva = 'A'; let trilhaAtualUrl = "";
-let peer = null; let conn = null; let roomName = ""; let peerIdPrefix = "rpg-sys-v36-";
-
-// Variáveis Globais para Controle de Tempo
-let diceTimeout = null;
-let diceInterval = null;
+let peer = null; let conn = null; let roomName = ""; let peerIdPrefix = "rpg-sys-v37-";
+let diceTimeout = null; let diceInterval = null; let isDiceRolling = false;
 
 ui.faixaA = new Audio(); ui.faixaA.loop = true; ui.faixaA.volume = 0;
 ui.faixaB = new Audio(); ui.faixaB.loop = true; ui.faixaB.volume = 0;
@@ -319,18 +295,32 @@ ui.faixaB = new Audio(); ui.faixaB.loop = true; ui.faixaB.volume = 0;
 async function startApp(mode) {
   roomName = document.getElementById("room-name").value.trim().toLowerCase() || "mesa";
   document.getElementById("login-screen").style.display = "none";
-  document.getElementById("game-container").style.display = "block";
   isRemote = (mode === 'remote');
+  
+  if (!isRemote) {
+    // Se for TV, mostra o botão de desbloquear áudio
+    document.getElementById("audio-unlock").style.display = "flex";
+  } else {
+    // Se for controle, vai direto pro jogo
+    document.getElementById("game-container").style.display = "block";
+    setupPeer(null, peerIdPrefix + roomName);
+  }
+  
   window.focus(); 
   try { if (navigator.wakeLock) await navigator.wakeLock.request('screen'); } catch(e){}
-  if (isRemote) {
-    document.body.classList.add("remote-active");
-    setupPeer(null, peerIdPrefix + roomName); 
-  } else {
-    setupPeer(peerIdPrefix + roomName, null);
-  }
-  carregarJogo(); updateUI(); carregarCena();
+  
+  carregarJogo(); updateUI();
   setInterval(() => { if (conn && conn.open) conn.send({ heartbeat: true }); }, 2000);
+}
+
+// Função para TV desbloquear áudio
+function unlockAudio() {
+  ui.faixaA.play().then(() => ui.faixaA.pause());
+  ui.faixaB.play().then(() => ui.faixaB.pause());
+  document.getElementById("audio-unlock").style.display = "none";
+  document.getElementById("game-container").style.display = "block";
+  setupPeer(peerIdPrefix + roomName, null);
+  carregarCena();
 }
 
 /* --- CONNECT --- */
@@ -383,10 +373,25 @@ function sendSync() {
 }
 function fullUpdate() { updateUI(); carregarCena(); sendSync(); }
 
-/* --- DADOS (CORRIGIDO: LIMPEZA DE TIMERS + 5s) --- */
+/* --- DADOS (SUSPENSE + BLOCK) --- */
 function rolarD20() {
+  if (isDiceRolling) return; // Bloqueia cliques duplos
+  isDiceRolling = true;
+  document.getElementById("btn-dice-roll").disabled = true;
+  
+  // VIBRATION HAPTIC
+  if (navigator.vibrate) navigator.vibrate(50);
+
   const val = Math.floor(Math.random() * 20) + 1;
-  lastDiceRoll = { val: val, id: Date.now() }; showDiceVisual(val); fullUpdate();
+  lastDiceRoll = { val: val, id: Date.now() }; 
+  showDiceVisual(val); 
+  fullUpdate();
+
+  // Libera o botão após o suspense (2s)
+  setTimeout(() => {
+    isDiceRolling = false;
+    document.getElementById("btn-dice-roll").disabled = false;
+  }, 2000);
 }
 
 function showDiceVisual(val) {
@@ -395,66 +400,54 @@ function showDiceVisual(val) {
   
   if(!isRemote) {
     const ov = ui.tvDiceOverlay;
-    
-    // 1. Limpar timers antigos (CORREÇÃO DE BUG)
     if(diceInterval) clearInterval(diceInterval);
     if(diceTimeout) clearTimeout(diceTimeout);
 
-    // 2. Resetar
     ov.className = "rolling"; 
     ov.style.opacity = "1";
     ov.style.transform = "translate(-50%, -50%) scale(1)";
     
-    // 3. Suspense Loop
-    diceInterval = setInterval(() => {
-        ov.innerText = Math.floor(Math.random() * 20) + 1;
-    }, 80);
+    diceInterval = setInterval(() => { ov.innerText = Math.floor(Math.random() * 20) + 1; }, 80);
 
-    // 4. Impacto Final após 2 segundos
     diceTimeout = setTimeout(() => {
         clearInterval(diceInterval);
         ov.innerText = val;
-        ov.className = "impact"; // Aplica o zoom e impacto
-        
-        // Aplica a cor do resultado
+        ov.className = "impact";
         if(val === 20) ov.classList.add("crit-20");
         else if(val === 1) ov.classList.add("crit-1");
         else ov.classList.add("normal");
 
-        // 5. Esconder APÓS 5 SEGUNDOS (Pedido do usuário)
         diceTimeout = setTimeout(() => {
             ov.style.opacity = "0";
             ov.style.transform = "translate(-50%, -50%) scale(0)";
-        }, 5000); // 5000ms = 5 segundos na tela
-
-    }, 2000); // 2000ms = 2 segundos de suspense
+        }, 5000); 
+    }, 2000); 
   }
 }
 
-/* --- CONTROLES --- */
-function mudarCenario(id) { estadoAtual.mapa = id; fullUpdate(); }
-function mudarModo(id) { estadoAtual.modo = id; fullUpdate(); }
-function toggleTvVisibility() { tvVisible = !tvVisible; fullUpdate(); }
+/* --- CONTROLES & VIBRATION --- */
+function btnAction(callback) {
+  if(navigator.vibrate) navigator.vibrate(30); // Vibra
+  callback();
+}
+
+function mudarCenario(id) { btnAction(() => { estadoAtual.mapa = id; fullUpdate(); }); }
+function mudarModo(id) { btnAction(() => { estadoAtual.modo = id; fullUpdate(); }); }
+function toggleTvVisibility() { btnAction(() => { tvVisible = !tvVisible; fullUpdate(); }); }
 function toggleHUDVisibility() { document.getElementById('hud-mestre').classList.toggle('oculto'); }
-function toggleMusic() { estadoAtual.audio = !estadoAtual.audio; applyAudioState(); fullUpdate(); }
+function toggleMusic() { btnAction(() => { estadoAtual.audio = !estadoAtual.audio; applyAudioState(); fullUpdate(); }); }
 
 /* --- RENDER UI --- */
 function updateUI(propagate = true) {
-  document.querySelectorAll('.btn-ctrl').forEach(b => {
-    b.classList.remove('active', 'tv-active', 'music-on', 'music-off');
-  });
-  
+  document.querySelectorAll('.btn-ctrl').forEach(b => { b.classList.remove('active', 'tv-active', 'music-on', 'music-off'); });
   if(document.getElementById('btn-map-' + estadoAtual.mapa)) document.getElementById('btn-map-' + estadoAtual.mapa).classList.add('active');
   if(document.getElementById('btn-mod-' + estadoAtual.modo)) document.getElementById('btn-mod-' + estadoAtual.modo).classList.add('active');
   if(tvVisible) document.getElementById('btn-tv-vis').classList.add('tv-active');
-  
   const btnMusic = document.getElementById('btn-music');
   if(estadoAtual.audio) { btnMusic.classList.add('music-on'); btnMusic.innerText = "🎵 Som"; } 
   else { btnMusic.classList.add('music-off'); btnMusic.innerText = "⏸️ Mudo"; }
 
-  if(!isRemote) {
-    if(tvVisible) ui.tvLayer.classList.add("visivel"); else ui.tvLayer.classList.remove("visivel");
-  }
+  if(!isRemote) { if(tvVisible) ui.tvLayer.classList.add("visivel"); else ui.tvLayer.classList.remove("visivel"); }
 
   ui.mestreList.innerHTML = ""; Object.values(ui.zones).forEach(z => z.innerHTML = "");
   CONFIG.jogadores.forEach((char, idx) => {
@@ -537,11 +530,14 @@ function carregarCena() {
   if(isRemote) return; 
   const mapaConf = CONFIG.mapas[estadoAtual.mapa]; 
   if(!mapaConf) return;
+  
+  // PRELOAD IMAGEM (Evita tela preta na troca)
   const urlImg = mapaConf.img[estadoAtual.modo];
   if (urlImg) {
     const img = new Image(); img.src = urlImg;
     img.onload = () => { ui.visual.style.backgroundImage = `url('${urlImg}')`; };
   }
+  
   const urlAudio = mapaConf.audio[estadoAtual.modo];
   if (urlAudio && urlAudio !== "") audioCrossfade(urlAudio);
 }
@@ -553,15 +549,8 @@ window.toggleHUDVisibility = () => { document.getElementById('hud-mestre').class
 
 document.addEventListener("keydown", (e) => {
   if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
-  
-  // ATALHOS FORÇADOS
   const key = e.key.toLowerCase();
-  
-  if (key === 'h') {
-    e.preventDefault(); 
-    if(!isRemote) toggleHUDVisibility();
-  }
-  
+  if (key === 'h') { e.preventDefault(); if(!isRemote) toggleHUDVisibility(); }
   if(!isRemote) {
     if(CONFIG.mapas[key]) mudarCenario(key);
     if(CONFIG.estados[key]) mudarModo(key);
