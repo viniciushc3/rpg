@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>RPG DM Station - V39 Classes</title>
+<title>RPG DM Station - V42 Audio FX</title>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <style>
@@ -15,7 +15,6 @@
   #login-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
   .login-box { background: #111; border: 1px solid #333; padding: 30px; border-radius: 12px; width: 100%; max-width: 400px; text-align: center; }
   .room-input { width: 100%; padding: 15px; margin: 20px 0; background: #222; border: 2px solid #444; color: #fff; font-size: 18px; text-align: center; border-radius: 8px; outline: none; text-transform: lowercase; }
-  .room-input:focus { border-color: #3498db; }
   .action-btn { width: 100%; padding: 15px; margin: 5px 0; font-size: 16px; font-weight: bold; cursor: pointer; border: none; border-radius: 8px; color: #fff; transition: 0.2s; }
   .btn-tv-mode { background: #2980b9; border-bottom: 4px solid #1a5276; }
   .btn-remote-mode { background: #27ae60; border-bottom: 4px solid #196f3d; }
@@ -30,12 +29,35 @@
   #connection-status.online { background: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
   #connection-status.reconnecting { background: #f1c40f; }
 
-  /* --- LAYOUT --- */
-  #game-container { position: relative; width: 100vw; height: 100vh; display: none; }
-  #mapa-visual { width: 100%; height: 100%; background-size: cover; background-position: center; transition: background-image 0.5s ease-in-out; }
+  /* --- LAYOUT & FX LAYERS --- */
+  #game-container { position: relative; width: 100vw; height: 100vh; display: none; overflow: hidden; }
+  
+  #mapa-visual { width: 100%; height: 100%; background-size: cover; background-position: center; transition: background-image 0.5s ease-in-out, filter 0.5s ease; }
   .modo-dia #mapa-visual { filter: brightness(1) contrast(1.05); }
   .modo-noite #mapa-visual { filter: brightness(0.5) contrast(1.2) hue-rotate(-15deg); }
   .modo-invertido #mapa-visual { filter: invert(1) hue-rotate(180deg) brightness(0.8) contrast(1.3); }
+
+  /* FX */
+  #fx-layer { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index: 15; }
+  @keyframes flashFx { 0% { background: rgba(255,255,255,0); } 10% { background: rgba(255,255,255,1); } 100% { background: rgba(255,255,255,0); } }
+  .fx-flash { animation: flashFx 0.5s ease-out; }
+  @keyframes shakeFx { 
+    0% { transform: translate(0,0); } 10% { transform: translate(-10px,-10px); } 20% { transform: translate(10px,10px); } 
+    30% { transform: translate(-10px,10px); } 40% { transform: translate(10px,-10px); } 50% { transform: translate(-10px,0); } 
+    100% { transform: translate(0,0); } 
+  }
+  .fx-shake { animation: shakeFx 0.5s ease-in-out; }
+  .fx-blood { box-shadow: inset 0 0 100px 50px rgba(180, 0, 0, 0.6); animation: pulseBlood 2s infinite; }
+  @keyframes pulseBlood { 0% { box-shadow: inset 0 0 100px 50px rgba(180, 0, 0, 0.4); } 50% { box-shadow: inset 0 0 150px 80px rgba(220, 0, 0, 0.7); } 100% { box-shadow: inset 0 0 100px 50px rgba(180, 0, 0, 0.4); } }
+
+  /* HANDOUT OVERLAY */
+  #handout-layer { 
+    position: fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.9); 
+    z-index: 100; display:none; flex-direction:column; align-items:center; justify-content:center; 
+    opacity: 0; transition: opacity 0.5s;
+  }
+  #handout-layer.visivel { display: flex; opacity: 1; }
+  #handout-img { max-width: 95%; max-height: 95%; border: 2px solid #fff; box-shadow: 0 0 30px #000; }
 
   /* --- HUD --- */
   #hud-mestre { position: absolute; top: 0; right: 0; width: 320px; height: 100%; background: rgba(18, 18, 18, 0.98); border-left: 1px solid #333; display: flex; flex-direction: column; z-index: 50; transition: transform 0.3s ease; }
@@ -58,6 +80,20 @@
   #btn-mod-d, #btn-mod-n, #btn-mod-i { grid-column: span 2; }
   #btn-music, #btn-tv-vis { grid-column: span 3; }
 
+  /* FX GRID */
+  .grid-fx { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 5px; margin-bottom: 15px;}
+  .btn-fx { padding: 10px; background: #444; border: 1px solid #666; color: #fff; border-radius: 6px; cursor: pointer; font-size: 14px; }
+  .btn-fx:active { background: #666; transform: scale(0.95); }
+  .btn-fx.blood-on { background: #c0392b; border-color: #e74c3c; color: #fff; box-shadow: 0 0 10px #c0392b; }
+
+  /* SELECT & SHOW WRAPPERS */
+  .control-wrapper { display: flex; gap: 5px; margin-top: 5px; background: #222; padding: 5px; border-radius: 6px; border: 1px solid #333; align-items: center; }
+  .label-tiny { font-size: 10px; color: #888; width: 50px; text-transform: uppercase; font-weight: bold; }
+  .select-box { flex: 1; background: #111; border: 1px solid #444; color: #ccc; padding: 8px; border-radius: 4px; font-size: 12px; }
+  .btn-show { padding: 8px 12px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; }
+  .btn-show:active { background: #2980b9; }
+  .btn-hide { padding: 8px; background: #442222; border: 1px solid #c0392b; color: #fff; border-radius: 4px; cursor: pointer; font-size: 11px; }
+
   .btn-ctrl { padding: 12px 0; background: #2a2a2a; border: 1px solid #444; color: #888; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.1s; }
   .btn-ctrl.active { background: #3498db; color: #fff; border-color: #5dade2; }
   .btn-ctrl.tv-active { background: #27ae60; color: #fff; border-color: #2ecc71; }
@@ -69,7 +105,6 @@
   .card-top { display: flex; justify-content: space-between; margin-bottom: 5px; }
   .input-nome { background: transparent; border: none; color: #fff; font-weight: bold; font-size: 16px; width: 100%; outline: none; }
   .input-classe { background: transparent; border: none; color: #888; font-size: 12px; width: 100%; outline: none; text-transform: uppercase; }
-  
   .bar-container { margin: 8px 0; }
   .hp-bar-bg { background: #111; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 3px; }
   .mp-bar-bg { background: #111; height: 6px; border-radius: 3px; overflow: hidden; } 
@@ -77,20 +112,18 @@
   .mp-bar-fill { height: 100%; transition: width 0.3s; background: #3498db; box-shadow: 0 0 5px #3498db; }
   .hp-verde { background: #2ecc71; } .hp-amarelo { background: #f1c40f; } .hp-vermelho { background: #e74c3c; }
   .status-text-row { display: flex; justify-content: space-between; font-size: 11px; color: #aaa; margin-bottom: 2px; }
-
   .card-actions { display: flex; gap: 3px; margin-top: 5px; }
   .btn-dmg { flex: 1; padding: 8px 0; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
   .btn-dmg.heal { color: #2ecc71; border-color: #27ae60; } 
   .btn-dmg.harm { color: #e74c3c; border-color: #c0392b; }
   .btn-dmg.mana-add { color: #3498db; border-color: #2980b9; }
   .btn-dmg.mana-sub { color: #5dade2; border-color: #2980b9; opacity: 0.8; }
-
   .card-settings { display: flex; gap: 5px; margin-top: 8px; }
   .select-style { flex: 1; background: #151515; border: 1px solid #333; color: #aaa; padding: 8px; border-radius: 4px; font-size: 12px; }
 
   /* --- TV SPECIFIC --- */
   body.remote-active #hud-mestre { width: 100vw; height: 100vh; position: fixed; left: 0; top: 0; border: none; transform: none !important; }
-  body.remote-active #mapa-visual, body.remote-active #tv-layer, body.remote-active #tv-dice-overlay { display: none !important; }
+  body.remote-active #mapa-visual, body.remote-active #tv-layer, body.remote-active #tv-dice-overlay, body.remote-active #handout-layer, body.remote-active #fx-layer { display: none !important; }
   #tv-layer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 20; display: none; }
   #tv-layer.visivel { display: block; }
   .zone { position: absolute; display: flex; align-items: center; justify-content: center; gap: 20px; pointer-events: none; }
@@ -107,14 +140,10 @@
   .tv-vals { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 2px; }
   .tv-hp-val { color: #2ecc71; } .tv-mp-val { color: #3498db; }
 
-  /* COLORS & UTILS */
-  .mestre-card[data-status="cansado"], .tv-card[data-status="cansado"] { border-color: #f1c40f !important; }
-  .mestre-card[data-status="critico"], .tv-card[data-status="critico"] { border-color: #e74c3c !important; }
-  .mestre-card[data-status="caido"], .tv-card[data-status="caido"] { border-color: #555 !important; opacity: 0.6; }
-  .mestre-card[data-status="poison"], .tv-card[data-status="poison"] { border-color: #2ecc71 !important; }
-  .btn-delete { display: none; position: absolute; top: 5px; right: 5px; background: #c0392b; color: #fff; border: 1px solid #fff; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; z-index: 10; }
-  .modo-edicao .btn-delete { display: block; }
-  .modo-edicao .input-nome, .modo-edicao .input-classe { pointer-events: auto; border-bottom: 1px dashed #777; background: rgba(255,255,255,0.05); }
+  /* FLOATING TEXT */
+  .float-text { position: absolute; left: 50%; top: 0; transform: translate(-50%, 0); font-size: 32px; font-weight: bold; pointer-events: none; animation: floatUp 1.5s forwards; text-shadow: 0 0 5px #000; z-index: 10; }
+  .float-text.heal { color: #2ecc71; } .float-text.harm { color: #e74c3c; } .float-text.mana { color: #3498db; }
+  @keyframes floatUp { 0% { top: 0; opacity: 1; transform: translate(-50%, 0) scale(1); } 100% { top: -80px; opacity: 0; transform: translate(-50%, 0) scale(1.5); } }
 
   /* DADOS ANIM */
   #tv-dice-overlay { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 300px; height: 300px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.95); border: 4px solid #888; border-radius: 50%; font-size: 120px; font-weight: 900; color: #fff; z-index: 9999; opacity: 0; pointer-events: none; transition: transform 0.1s; }
@@ -130,13 +159,14 @@
 <body>
 
 <datalist id="lista-classes"></datalist>
-
 <div id="connection-status"></div>
 
 <div id="audio-unlock">
   <h1 style="margin-bottom:30px;">🖥️ MODO TV</h1>
   <button class="btn-unlock" onclick="unlockAudio()">🔊 CLIQUE PARA ATIVAR O SOM</button>
 </div>
+<div id="handout-layer"><img id="handout-img" src="" alt="Handout"></div>
+<div id="fx-layer"></div>
 
 <div id="login-screen">
   <div class="login-box">
@@ -150,14 +180,12 @@
 
 <div id="game-container">
   <div id="mapa-visual"></div>
-  
   <div id="tv-layer">
     <div id="zone-norte" class="zone"></div>
     <div id="zone-sul" class="zone"></div>
     <div id="zone-leste" class="zone"></div>
     <div id="zone-oeste" class="zone"></div>
   </div>
-  
   <div id="tv-dice-overlay"></div>
 
   <div id="hud-mestre">
@@ -172,7 +200,27 @@
         <div id="dice-display">-</div>
       </div>
 
-      <div class="grid-maps">
+      <div class="grid-fx">
+        <button class="btn-fx" onclick="triggerFx('shake')">💥 TREMOR</button>
+        <button class="btn-fx" onclick="triggerFx('flash')">⚡ FLASH</button>
+        <button class="btn-fx" id="btn-blood" onclick="toggleBlood()">🩸 SANGUE</button>
+      </div>
+
+      <div class="control-wrapper">
+        <span class="label-tiny">CARTA</span>
+        <select id="sel-handout" class="select-box"></select>
+        <button class="btn-show" onclick="showHandoutFromList()">👁️</button>
+        <button class="btn-hide" onclick="hideHandout()">✖</button>
+      </div>
+
+      <div class="control-wrapper">
+        <span class="label-tiny">INIMIGO</span>
+        <select id="sel-enemy" class="select-box"></select>
+        <button class="btn-show" onclick="showEnemyFromList()">👁️</button>
+        <button class="btn-hide" onclick="hideHandout()">✖</button>
+      </div>
+
+      <div class="grid-maps" style="margin-top:10px;">
         <button class="btn-ctrl" id="btn-map-1" onclick="mudarCenario('1')">1</button>
         <button class="btn-ctrl" id="btn-map-2" onclick="mudarCenario('2')">2</button>
         <button class="btn-ctrl" id="btn-map-3" onclick="mudarCenario('3')">3</button>
@@ -185,7 +233,6 @@
         <button class="btn-ctrl" id="btn-mod-d" onclick="mudarModo('d')">☀️ Dia</button>
         <button class="btn-ctrl" id="btn-mod-n" onclick="mudarModo('n')">🌙 Noite</button>
         <button class="btn-ctrl" id="btn-mod-i" onclick="mudarModo('i')">👹 Inv.</button>
-        
         <button class="btn-ctrl" id="btn-music" onclick="toggleMusic()">🎵 Som</button>
         <button class="btn-ctrl" id="btn-tv-vis" onclick="toggleTvVisibility()">👁️ TV</button>
       </div>
@@ -215,37 +262,53 @@ const CONFIG = {
     '7': { img: { d: 'https://i.imgur.com/l33W47q.jpeg', n: '', i: '' }, audio: { d: '', n: '', i: '' } }
   },
   
-  // Classes Padrão (Edite aqui para mudar as sugestões)
-  classesPadrao: [
-    "Guerreiro", "Mago", "Ladino", "Clérigo", "Bárbaro", "Paladino", 
-    "Ranger", "Feiticeiro", "Bardo", "Druida", "Monge", "Bruxo", "Artífice"
-  ],
+  // === LINKS DOS EFEITOS SONOROS (Preencha com seus links) ===
+  sfx: {
+    'dano': 'https://files.catbox.moe/04s1r0.mp3',   // Ex: https://files.catbox.moe/punch.mp3
+    'cura': 'https://files.catbox.moe/5smutd.mp3',   // Ex: https://files.catbox.moe/heal.mp3
+    'mana': 'https://files.catbox.moe/b6tc2t.mp3',   // Ex: https://files.catbox.moe/mana.mp3
+    'tremor': 'https://files.catbox.moe/50fhvn.mp3', // Ex: https://files.catbox.moe/rumble.mp3
+    'flash': 'https://files.catbox.moe/w7i7zb.mp3',  // Ex: https://files.catbox.moe/thunder.mp3
+    'carta': 'https://files.catbox.moe/rakoek.mp3',  // Ex: https://files.catbox.moe/paper.mp3
+    'latido': 'https://files.catbox.moe/9qp44s.mp3',  // Ex: https://files.catbox.moe/paper.mp3
+    'inimigo': 'https://files.catbox.moe/xd8amy.mp3' // Ex: https://files.catbox.moe/roar.mp3
+  },
 
-  listaStatus: [
-    { valor: "", label: "🟢 Saudável" }, { valor: "cansado", label: "🟡 Cansado" },
-    { valor: "critico", label: "🔴 Debilitado" }, { valor: "caido", label: "💀 Caído" },
-    { valor: "poison", label: "☠️ Envenenado" }, { valor: "invis", label: "👻 Invisível" }
-  ],
-  jogadores: [
-    { nome: "Jogador 1", classe: "Guerreiro", hpMax: 50, hpAtual: 50, mpMax: 20, mpAtual: 20, status: "", posicao: "sul" },
-    { nome: "Jogador 2", classe: "Mago", hpMax: 30, hpAtual: 30, mpMax: 50, mpAtual: 50, status: "", posicao: "norte" }
-  ],
-  volume: 0.5, 
-  saveKey: "rpg_dm_v39_classes"
+  handouts: {
+    'Carta': 'https://i.imgur.com/05da1cq.png',
+    'Mapa': 'https://i.imgur.com/zfDexGy.png',
+    'Dispositivo': 'https://i.imgur.com/s6Q6ptM.png',
+    'equipamento': 'https://i.imgur.com/xiiWbO5.png',
+  },
+
+  inimigos: {
+    'A criatura portal': 'https://i.imgur.com/DBOpKIP.png',
+    'Sombra rastejante': 'https://i.imgur.com/AifuiCI.jpeg',
+    'exame': 'https://i.imgur.com/mmpm2hP.png',
+    'caçador': 'https://i.imgur.com/QbiPg7T.png',
+    'experiemnto': 'https://i.imgur.com/tfm9Qla.png',
+	'observador': 'https://i.imgur.com/1sLQjR3.png',
+  },
+
+  classesPadrao: ["Guerreiro", "Mago", "Ladino", "Clérigo", "Bárbaro", "Paladino", "Ranger", "Feiticeiro", "Bardo", "Druida", "Monge", "Bruxo", "Artífice"],
+  listaStatus: [ { valor: "", label: "🟢 Saudável" }, { valor: "cansado", label: "🟡 Cansado" }, { valor: "critico", label: "🔴 Debilitado" }, { valor: "caido", label: "💀 Caído" }, { valor: "poison", label: "☠️ Envenenado" }, { valor: "invis", label: "👻 Invisível" } ],
+  jogadores: [ { nome: "Jogador 1", classe: "Guerreiro", hpMax: 50, hpAtual: 50, mpMax: 20, mpAtual: 20, status: "", posicao: "sul" }, { nome: "Jogador 2", classe: "Mago", hpMax: 30, hpAtual: 30, mpMax: 50, mpAtual: 50, status: "", posicao: "norte" } ],
+  volume: 0.5, saveKey: "rpg_dm_v42_audiofx"
 };
 
 const ui = {
   mestreList: document.getElementById("lista-mestre"),
   zones: { norte: document.getElementById("zone-norte"), sul: document.getElementById("zone-sul"), leste: document.getElementById("zone-leste"), oeste: document.getElementById("zone-oeste") },
   tvLayer: document.getElementById("tv-layer"), diceDisplay: document.getElementById("dice-display"), tvDiceOverlay: document.getElementById("tv-dice-overlay"),
-  visual: document.getElementById("mapa-visual"), audioPlayers: {}, btnEdit: document.getElementById("btn-editar"), connStatus: document.getElementById("connection-status")
+  visual: document.getElementById("mapa-visual"), audioPlayers: {}, btnEdit: document.getElementById("btn-editar"), connStatus: document.getElementById("connection-status"),
+  handoutLayer: document.getElementById("handout-layer"), handoutImg: document.getElementById("handout-img"), fxLayer: document.getElementById("fx-layer")
 };
 
-let estadoAtual = { mapa: '1', modo: 'd', audio: true }; 
+let estadoAtual = { mapa: '1', modo: 'd', audio: true, blood: false }; 
 let tvVisible = false; let lastDiceRoll = { val: 0, id: 0 }; 
 let isRemote = false; let modoEdicao = false;
 let faixaAtiva = 'A'; let trilhaAtualUrl = "";
-let peer = null; let conn = null; let roomName = ""; let peerIdPrefix = "rpg-sys-v39-";
+let peer = null; let conn = null; let roomName = ""; let peerIdPrefix = "rpg-sys-v42-";
 let diceTimeout = null; let diceInterval = null; let isDiceRolling = false;
 
 ui.faixaA = new Audio(); ui.faixaA.loop = true; ui.faixaA.volume = 0;
@@ -256,55 +319,49 @@ async function startApp(mode) {
   roomName = document.getElementById("room-name").value.trim().toLowerCase() || "mesa";
   document.getElementById("login-screen").style.display = "none";
   isRemote = (mode === 'remote');
-  
-  if (!isRemote) {
-    document.getElementById("audio-unlock").style.display = "flex";
-  } else {
-    document.getElementById("game-container").style.display = "block";
-    setupPeer(null, peerIdPrefix + roomName);
-  }
-  window.focus(); 
-  try { if (navigator.wakeLock) await navigator.wakeLock.request('screen'); } catch(e){}
-  
+  if (!isRemote) { document.getElementById("audio-unlock").style.display = "flex"; } else { document.getElementById("game-container").style.display = "block"; setupPeer(null, peerIdPrefix + roomName); }
+  window.focus(); try { if (navigator.wakeLock) await navigator.wakeLock.request('screen'); } catch(e){}
+  populateSelect('sel-handout', CONFIG.handouts);
+  populateSelect('sel-enemy', CONFIG.inimigos);
   carregarJogo(); updateUI();
   setInterval(() => { if (conn && conn.open) conn.send({ heartbeat: true }); }, 2000);
 }
 
 function unlockAudio() {
-  ui.faixaA.play().then(() => ui.faixaA.pause());
-  ui.faixaB.play().then(() => ui.faixaB.pause());
+  ui.faixaA.play().then(() => ui.faixaA.pause()); ui.faixaB.play().then(() => ui.faixaB.pause());
   document.getElementById("audio-unlock").style.display = "none";
   document.getElementById("game-container").style.display = "block";
-  setupPeer(peerIdPrefix + roomName, null);
-  carregarCena();
+  setupPeer(peerIdPrefix + roomName, null); carregarCena();
+}
+
+function populateSelect(id, dataObj) {
+  const sel = document.getElementById(id);
+  sel.innerHTML = '<option value="">Selecione...</option>';
+  for (const key in dataObj) { sel.innerHTML += `<option value="${dataObj[key]}">${key}</option>`; }
 }
 
 /* --- CONNECT --- */
 function setupPeer(myId, connectToId) {
-  if (peer) peer.destroy();
-  peer = new Peer(myId);
+  if (peer) peer.destroy(); peer = new Peer(myId);
   peer.on('open', (id) => { ui.connStatus.className = 'online'; if(connectToId) connect(connectToId); });
   peer.on('connection', (c) => handleConnection(c));
-  peer.on('error', (err) => {
-    if(err.type === 'unavailable-id') { alert("Sala ocupada!"); location.reload(); }
-    ui.connStatus.className = 'reconnecting';
-    if (isRemote && connectToId) setTimeout(() => connect(connectToId), 2000);
-  });
+  peer.on('error', (err) => { if(err.type === 'unavailable-id') { alert("Sala ocupada!"); location.reload(); } ui.connStatus.className = 'reconnecting'; if (isRemote && connectToId) setTimeout(() => connect(connectToId), 2000); });
   peer.on('disconnected', () => { ui.connStatus.className = 'reconnecting'; if(myId) peer.reconnect(); });
 }
-
-function connect(targetId) {
-  if (conn) conn.close();
-  ui.connStatus.className = 'reconnecting';
-  conn = peer.connect(targetId, { reliable: true });
-  handleConnection(conn);
-}
-
+function connect(targetId) { if (conn) conn.close(); ui.connStatus.className = 'reconnecting'; conn = peer.connect(targetId, { reliable: true }); handleConnection(conn); }
 function handleConnection(c) {
-  conn = c;
-  conn.on('open', () => { ui.connStatus.className = 'online'; if(!isRemote) setTimeout(sendSync, 500); });
+  conn = c; conn.on('open', () => { ui.connStatus.className = 'online'; if(!isRemote) setTimeout(sendSync, 500); });
   conn.on('data', (data) => {
     if (data.heartbeat) return;
+    
+    // SFX & FX RECEIVER (TV ONLY)
+    if (!isRemote) {
+        if (data.type === 'sfx') { playSoundEffect(data.key); return; }
+        if (data.type === 'fx') { showFx(data.effect); return; }
+        if (data.type === 'handout') { showHandoutTV(data.url); return; }
+        if (data.type === 'float') { showFloatingText(data.target, data.val, data.isMana); return; }
+    }
+
     if(data.jogadores) CONFIG.jogadores = data.jogadores;
     if(data.estado) { estadoAtual = data.estado; applyAudioState(); carregarCena(); }
     if(data.tvVisible !== undefined) tvVisible = data.tvVisible;
@@ -313,25 +370,20 @@ function handleConnection(c) {
   });
   conn.on('close', () => { ui.connStatus.className = 'reconnecting'; if (isRemote) setTimeout(() => connect(peerIdPrefix + roomName), 1000); });
 }
-
 function sendSync() { if(conn && conn.open) conn.send({ jogadores: CONFIG.jogadores, estado: estadoAtual, tvVisible: tvVisible, dice: lastDiceRoll }); salvarJogo(); }
 function fullUpdate() { updateUI(); carregarCena(); sendSync(); }
 
 /* --- DADOS --- */
 function rolarD20() {
-  if (isDiceRolling) return;
-  isDiceRolling = true; document.getElementById("btn-dice-roll").disabled = true;
+  if (isDiceRolling) return; isDiceRolling = true; document.getElementById("btn-dice-roll").disabled = true;
   if (navigator.vibrate) navigator.vibrate(50);
-  const val = Math.floor(Math.random() * 20) + 1;
-  lastDiceRoll = { val: val, id: Date.now() }; showDiceVisual(val); fullUpdate();
+  const val = Math.floor(Math.random() * 20) + 1; lastDiceRoll = { val: val, id: Date.now() }; showDiceVisual(val); fullUpdate();
   setTimeout(() => { isDiceRolling = false; document.getElementById("btn-dice-roll").disabled = false; }, 2000);
 }
-
 function showDiceVisual(val) {
   ui.diceDisplay.innerText = val; ui.diceDisplay.style.color = val===20?"#2ecc71":(val===1?"#e74c3c":"#f1c40f");
   if(!isRemote) {
-    const ov = ui.tvDiceOverlay;
-    if(diceInterval) clearInterval(diceInterval); if(diceTimeout) clearTimeout(diceTimeout);
+    const ov = ui.tvDiceOverlay; if(diceInterval) clearInterval(diceInterval); if(diceTimeout) clearTimeout(diceTimeout);
     ov.className = "rolling"; ov.style.opacity = "1"; ov.style.transform = "translate(-50%, -50%) scale(1)";
     diceInterval = setInterval(() => { ov.innerText = Math.floor(Math.random() * 20) + 1; }, 80);
     diceTimeout = setTimeout(() => {
@@ -342,7 +394,7 @@ function showDiceVisual(val) {
   }
 }
 
-/* --- LOGIC --- */
+/* --- LOGIC & FX SENDERS --- */
 function btnAction(callback) { if(navigator.vibrate) navigator.vibrate(30); callback(); }
 function mudarCenario(id) { btnAction(() => { estadoAtual.mapa = id; fullUpdate(); }); }
 function mudarModo(id) { btnAction(() => { estadoAtual.modo = id; fullUpdate(); }); }
@@ -350,20 +402,88 @@ function toggleTvVisibility() { btnAction(() => { tvVisible = !tvVisible; fullUp
 function toggleHUDVisibility() { document.getElementById('hud-mestre').classList.toggle('oculto'); }
 function toggleMusic() { btnAction(() => { estadoAtual.audio = !estadoAtual.audio; applyAudioState(); fullUpdate(); }); }
 
+/* HANDOUTS & ENEMIES */
+function showHandoutFromList() { const url = document.getElementById('sel-handout').value; sendHandout(url, 'carta'); }
+function showEnemyFromList() { const url = document.getElementById('sel-enemy').value; sendHandout(url, 'inimigo'); }
+function hideHandout() { if(conn && conn.open) conn.send({ type: 'handout', url: null }); }
+
+function sendHandout(url, soundType) {
+    if(conn && conn.open) {
+        conn.send({ type: 'handout', url: url });
+        if(url) conn.send({ type: 'sfx', key: soundType }); // Toca som
+    }
+}
+
+function showHandoutTV(url) {
+  if (url) { ui.handoutImg.src = url; ui.handoutLayer.classList.add("visivel"); } 
+  else { ui.handoutLayer.classList.remove("visivel"); }
+}
+
+/* GLOBAL FX */
+function triggerFx(effect) { 
+    if(conn && conn.open) {
+        conn.send({ type: 'fx', effect: effect }); 
+        conn.send({ type: 'sfx', key: effect === 'shake' ? 'tremor' : 'flash' });
+    }
+    btnAction(()=>{}); 
+}
+function toggleBlood() { estadoAtual.blood = !estadoAtual.blood; fullUpdate(); }
+
+function showFx(effect) {
+  if (effect === 'flash') { ui.fxLayer.className = ""; void ui.fxLayer.offsetWidth; ui.fxLayer.classList.add("fx-flash"); }
+  if (effect === 'shake') { document.body.classList.remove("fx-shake"); void document.body.offsetWidth; document.body.classList.add("fx-shake"); }
+}
+
+/* FLOATING TEXT LOGIC & SOUND TRIGGERS */
+function sendFloat(idx, val, isMana=false) { 
+    if(conn && conn.open) {
+        conn.send({ type: 'float', target: idx, val: val, isMana: isMana });
+        // Envia som apropriado
+        if (isMana) conn.send({ type: 'sfx', key: 'mana' });
+        else conn.send({ type: 'sfx', key: val > 0 ? 'cura' : 'dano' });
+    }
+}
+
+function showFloatingText(targetIdx, val, isMana) {
+  const card = document.getElementById(`tv-card-${targetIdx}`);
+  if(!card) return;
+  const el = document.createElement("div");
+  el.className = "float-text " + (isMana ? "mana" : (val > 0 ? "heal" : "harm"));
+  el.innerText = (val > 0 ? "+" : "") + val;
+  card.appendChild(el);
+  setTimeout(() => el.remove(), 1500);
+}
+
+/* SFX PLAYER */
+function playSoundEffect(key) {
+    const url = CONFIG.sfx[key];
+    if (url && url !== "") {
+        const audio = new Audio(url);
+        audio.volume = 0.7; // Efeitos sonoros um pouco mais altos
+        audio.play().catch(e => console.log("Erro SFX:", e));
+    }
+}
+
+/* UI UPDATE */
 function updateUI(propagate = true) {
   document.querySelectorAll('.btn-ctrl').forEach(b => { b.classList.remove('active', 'tv-active', 'music-on', 'music-off'); });
   if(document.getElementById('btn-map-' + estadoAtual.mapa)) document.getElementById('btn-map-' + estadoAtual.mapa).classList.add('active');
   if(document.getElementById('btn-mod-' + estadoAtual.modo)) document.getElementById('btn-mod-' + estadoAtual.modo).classList.add('active');
   if(tvVisible) document.getElementById('btn-tv-vis').classList.add('tv-active');
+  
   const btnMusic = document.getElementById('btn-music');
-  if(estadoAtual.audio) { btnMusic.classList.add('music-on'); btnMusic.innerText = "🎵 Som"; } 
-  else { btnMusic.classList.add('music-off'); btnMusic.innerText = "⏸️ Mudo"; }
+  if(estadoAtual.audio) { btnMusic.classList.add('music-on'); btnMusic.innerText = "🎵 Som"; } else { btnMusic.classList.add('music-off'); btnMusic.innerText = "⏸️ Mudo"; }
+  
+  const btnBlood = document.getElementById('btn-blood');
+  if(estadoAtual.blood) btnBlood.classList.add('blood-on'); else btnBlood.classList.remove('blood-on');
 
-  if(!isRemote) { if(tvVisible) ui.tvLayer.classList.add("visivel"); else ui.tvLayer.classList.remove("visivel"); }
+  if(!isRemote) { 
+    if(tvVisible) ui.tvLayer.classList.add("visivel"); else ui.tvLayer.classList.remove("visivel"); 
+    if(estadoAtual.blood) ui.fxLayer.classList.add("fx-blood"); else ui.fxLayer.classList.remove("fx-blood");
+  }
 
-  // POPULA DATALIST DE CLASSES
   const dl = document.getElementById('lista-classes');
-  dl.innerHTML = CONFIG.classesPadrao.map(c => `<option value="${c}">`).join('');
+  if(dl) dl.innerHTML = CONFIG.classesPadrao.map(c => `<option value="${c}">`).join('');
 
   ui.mestreList.innerHTML = ""; Object.values(ui.zones).forEach(z => z.innerHTML = "");
   CONFIG.jogadores.forEach((char, idx) => {
@@ -395,6 +515,7 @@ function updateUI(propagate = true) {
 
     if(!isRemote) {
       const tCard = document.createElement("div"); tCard.className = "tv-card"; tCard.setAttribute("data-status", char.status);
+      tCard.id = `tv-card-${idx}`;
       tCard.innerHTML = `
         <div class="tv-name">${char.nome}</div>
         <div style="font-size:12px;color:#aaa;text-transform:uppercase;margin-bottom:5px;">${char.classe}</div>
@@ -408,8 +529,8 @@ function updateUI(propagate = true) {
   });
 }
 
-window.hp=(idx,val)=>{const c=CONFIG.jogadores[idx];c.hpAtual+=val;if(c.hpAtual>c.hpMax)c.hpAtual=c.hpMax;if(c.hpAtual<0)c.hpAtual=0;const pct=(c.hpAtual/c.hpMax)*100;if(c.hpAtual<=0){c.status="caido";}else{const l=["","cansado","critico","caido"];if(l.includes(c.status)){if(pct<20)c.status="critico";else if(pct<50)c.status="cansado";else c.status="";}}fullUpdate();}
-window.mp=(idx,val)=>{const c=CONFIG.jogadores[idx];c.mpAtual+=val;if(c.mpAtual>c.mpMax)c.mpAtual=c.mpMax;if(c.mpAtual<0)c.mpAtual=0;fullUpdate();}
+window.hp=(idx,val)=>{const c=CONFIG.jogadores[idx];c.hpAtual+=val;if(c.hpAtual>c.hpMax)c.hpAtual=c.hpMax;if(c.hpAtual<0)c.hpAtual=0;const pct=(c.hpAtual/c.hpMax)*100;if(c.hpAtual<=0){c.status="caido";}else{const l=["","cansado","critico","caido"];if(l.includes(c.status)){if(pct<20)c.status="critico";else if(pct<50)c.status="cansado";else c.status="";}} sendFloat(idx, val, false); fullUpdate();}
+window.mp=(idx,val)=>{const c=CONFIG.jogadores[idx];c.mpAtual+=val;if(c.mpAtual>c.mpMax)c.mpAtual=c.mpMax;if(c.mpAtual<0)c.mpAtual=0; sendFloat(idx, val, true); fullUpdate();}
 window.st=(idx,val)=>{CONFIG.jogadores[idx].status=val;fullUpdate();}
 window.edit=(idx,f,v)=>{CONFIG.jogadores[idx][f]=v;fullUpdate();}
 window.adicionarJogador=()=>{CONFIG.jogadores.push({nome:"Novo",classe:"Heroi",hpMax:30,hpAtual:30,mpMax:10,mpAtual:10,status:"",posicao:"sul"});fullUpdate();}
