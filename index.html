@@ -3,122 +3,84 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>RPG DM Station - Easy Sync</title>
+<title>RPG DM Station - V30 Audio Fix</title>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <style>
-  /* --- RESET & BASICS --- */
+  /* --- BASICS --- */
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
   body { margin: 0; padding: 0; background: #050505; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; color: #e0e0e0; }
   
-  /* --- TELA DE LOGIN (Conexão Fácil) --- */
-  #login-screen {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: #000; z-index: 9999; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; padding: 20px;
-  }
-  .login-box {
-    background: #111; border: 1px solid #333; padding: 30px; border-radius: 12px;
-    width: 100%; max-width: 400px; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.5);
-  }
-  .room-input {
-    width: 100%; padding: 15px; margin: 20px 0; background: #222; border: 2px solid #444;
-    color: #fff; font-size: 18px; text-align: center; border-radius: 8px; outline: none;
-    text-transform: lowercase;
-  }
+  /* --- LOGIN --- */
+  #login-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+  .login-box { background: #111; border: 1px solid #333; padding: 30px; border-radius: 12px; width: 100%; max-width: 400px; text-align: center; }
+  .room-input { width: 100%; padding: 15px; margin: 20px 0; background: #222; border: 2px solid #444; color: #fff; font-size: 18px; text-align: center; border-radius: 8px; outline: none; text-transform: lowercase; }
   .room-input:focus { border-color: #3498db; }
-  
-  .action-btn {
-    width: 100%; padding: 15px; margin: 5px 0; font-size: 16px; font-weight: bold; cursor: pointer;
-    border: none; border-radius: 8px; color: #fff; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s;
-  }
+  .action-btn { width: 100%; padding: 15px; margin: 5px 0; font-size: 16px; font-weight: bold; cursor: pointer; border: none; border-radius: 8px; color: #fff; transition: 0.2s; }
   .btn-tv-mode { background: #2980b9; border-bottom: 4px solid #1a5276; }
-  .btn-tv-mode:active { transform: translateY(2px); border-bottom: none; margin-top: 7px; }
-  
   .btn-remote-mode { background: #27ae60; border-bottom: 4px solid #196f3d; }
-  .btn-remote-mode:active { transform: translateY(2px); border-bottom: none; margin-top: 7px; }
 
-  /* --- LAYOUT PRINCIPAL --- */
+  /* --- STATUS BAR --- */
+  #connection-status { position: fixed; top: 0; left: 0; width: 100%; height: 4px; z-index: 10000; background: #e74c3c; transition: background 0.3s; }
+  #connection-status.online { background: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
+  #connection-status.reconnecting { background: #f1c40f; }
+
+  /* --- LAYOUT --- */
   #game-container { position: relative; width: 100vw; height: 100vh; display: none; }
-
-  /* --- VISUAIS DA TV --- */
+  
+  /* --- VISUAIS --- */
   #mapa-visual { width: 100%; height: 100%; background-size: cover; background-position: center; transition: 0.5s; }
   .modo-dia #mapa-visual { filter: brightness(1) contrast(1.05); }
   .modo-noite #mapa-visual { filter: brightness(0.5) contrast(1.2) hue-rotate(-15deg); }
   .modo-invertido #mapa-visual { filter: invert(1) hue-rotate(180deg) brightness(0.8) contrast(1.3); }
 
-  #efeito-chuva { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0.05)); }
-  #efeito-chuva.ativo { display: block; animation: flash 8s infinite; }
-  #efeito-chuva::before { content: ""; position: absolute; width: 100%; height: 100%; top: -100%; left: 0; background-image: repeating-linear-gradient(transparent, transparent 95%, rgba(164, 199, 255, 0.4) 98%); animation: cair 0.7s infinite linear; }
-  @keyframes cair { to { transform: translateY(100%); } } @keyframes flash { 96%, 99% { background-color: rgba(255, 255, 255, 0.15); } }
-
-  /* --- HUD DE CONTROLE (Layout Flexivel) --- */
-  #hud-mestre {
-    position: absolute; top: 0; right: 0; width: 320px; height: 100%;
-    background: rgba(18, 18, 18, 0.98); border-left: 1px solid #333;
-    display: flex; flex-direction: column; z-index: 50; transition: transform 0.3s ease;
-  }
-  
-  /* Cabeçalho Fixo */
+  /* --- HUD --- */
+  #hud-mestre { position: absolute; top: 0; right: 0; width: 320px; height: 100%; background: rgba(18, 18, 18, 0.98); border-left: 1px solid #333; display: flex; flex-direction: column; z-index: 50; transition: transform 0.3s ease; }
+  #hud-mestre.oculto { transform: translateX(100%); }
   .hud-header { padding: 10px; background: #151515; border-bottom: 1px solid #333; flex-shrink: 0; }
-  
-  /* Área de Rolagem (Lista de Jogadores) */
-  .hud-content { flex: 1; overflow-y: auto; padding: 10px; -webkit-overflow-scrolling: touch; }
-  
-  /* Rodapé Fixo */
+  .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .btn-gear { background: none; border: none; color: #555; font-size: 20px; padding: 0 10px; cursor: pointer; }
+  .btn-gear.ativo { color: #fff; }
+  .hud-content { flex: 1; overflow-y: auto; padding: 10px; }
   .hud-footer { padding: 10px; background: #151515; border-top: 1px solid #333; flex-shrink: 0; }
 
-  /* --- GRIDS DE BOTÕES --- */
+  /* --- CONTROLES --- */
+  .dice-wrapper { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; background: #222; padding: 8px; border-radius: 8px; border: 1px solid #333; }
+  .btn-dice { flex: 1; padding: 12px; background: #333; color: #fff; border: 1px solid #555; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; }
+  #dice-display { width: 50px; font-size: 28px; font-weight: bold; text-align: center; color: #f1c40f; }
+
   .grid-maps { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 8px; }
-  .grid-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  .grid-actions { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+  #btn-mod-d, #btn-mod-n, #btn-mod-i { grid-column: span 2; }
+  #btn-music, #btn-tv-vis { grid-column: span 3; }
 
-  .btn-ctrl {
-    padding: 12px 0; background: #2a2a2a; border: 1px solid #444; color: #888;
-    border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.1s;
-  }
-  .btn-ctrl:active { transform: scale(0.95); }
-  
-  /* Estados Ativos */
-  .btn-ctrl.active { background: #3498db; color: #fff; border-color: #5dade2; box-shadow: 0 0 8px rgba(52, 152, 219, 0.5); }
-  .btn-ctrl.rain-active { background: #2c3e50; color: #3498db; border-color: #3498db; }
-  .btn-ctrl.tv-active { background: #27ae60; color: #fff; border-color: #2ecc71; box-shadow: 0 0 8px rgba(46, 204, 113, 0.5); }
+  .btn-ctrl { padding: 12px 0; background: #2a2a2a; border: 1px solid #444; color: #888; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.1s; }
+  .btn-ctrl.active { background: #3498db; color: #fff; border-color: #5dade2; }
+  .btn-ctrl.tv-active { background: #27ae60; color: #fff; border-color: #2ecc71; }
+  .btn-ctrl.music-on { background: #2ecc71; color: #fff; border-color: #27ae60; }
+  .btn-ctrl.music-off { background: #e74c3c; color: #fff; border-color: #c0392b; }
 
-  /* --- DADOS --- */
-  .dice-wrapper { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
-  .btn-dice { flex: 1; padding: 15px; background: #333; color: #fff; border: 1px solid #555; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
-  .btn-dice:active { background: #555; }
-  #dice-display { width: 60px; font-size: 28px; font-weight: bold; text-align: center; color: #f1c40f; }
-
-  /* --- CARDS DE JOGADOR (MESTRE) --- */
-  .mestre-card { background: #222; border-radius: 8px; padding: 10px; margin-bottom: 10px; border-left: 4px solid #555; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-  
+  /* --- CARDS --- */
+  .mestre-card { background: #222; border-radius: 8px; padding: 10px; margin-bottom: 10px; border-left: 4px solid #555; position: relative; }
   .card-top { display: flex; justify-content: space-between; margin-bottom: 5px; }
   .input-nome { background: transparent; border: none; color: #fff; font-weight: bold; font-size: 16px; width: 100%; outline: none; }
   .input-classe { background: transparent; border: none; color: #888; font-size: 12px; width: 100%; outline: none; text-transform: uppercase; }
-
   .hp-bar-bg { background: #111; height: 10px; border-radius: 5px; overflow: hidden; margin: 8px 0; }
   .hp-bar-fill { height: 100%; transition: width 0.3s; }
   .hp-verde { background: #2ecc71; } .hp-amarelo { background: #f1c40f; } .hp-vermelho { background: #e74c3c; }
-
   .card-actions { display: flex; gap: 5px; margin-top: 8px; }
-  .btn-dmg { flex: 1; padding: 10px; background: #333; border: 1px solid #444; color: #fff; border-radius: 4px; cursor: pointer; font-weight: bold; }
+  .btn-dmg { flex: 1; padding: 12px; background: #333; border: 1px solid #444; color: #fff; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; }
   .btn-dmg.heal { color: #2ecc71; } .btn-dmg.harm { color: #e74c3c; }
-
   .card-settings { display: flex; gap: 5px; margin-top: 8px; }
-  .select-style { flex: 1; background: #151515; border: 1px solid #333; color: #aaa; padding: 5px; border-radius: 4px; font-size: 12px; }
+  .select-style { flex: 1; background: #151515; border: 1px solid #333; color: #aaa; padding: 8px; border-radius: 4px; font-size: 12px; }
 
-  /* --- MODIFICAÇÕES MODO REMOTO (CELULAR) --- */
-  body.remote-active #hud-mestre {
-    width: 100vw; height: 100vh; position: fixed; left: 0; top: 0; border: none; transform: none !important;
-  }
-  /* Esconde coisas da TV no celular */
-  body.remote-active #mapa-visual, body.remote-active #efeito-chuva, body.remote-active #tv-layer, body.remote-active #tv-dice-overlay { display: none !important; }
+  /* --- REMOTE SPECIFIC --- */
+  body.remote-active #hud-mestre { width: 100vw; height: 100vh; position: fixed; left: 0; top: 0; border: none; transform: none !important; }
+  body.remote-active #mapa-visual, body.remote-active #tv-layer, body.remote-active #tv-dice-overlay { display: none !important; }
 
-  /* --- MODIFICAÇÕES MODO TV --- */
-  /* Esconde HUD do Mestre na TV (se quiser) */
+  /* --- TV SPECIFIC --- */
   #tv-layer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 20; display: none; }
   #tv-layer.visivel { display: block; }
-  
   .zone { position: absolute; display: flex; align-items: center; justify-content: center; gap: 20px; pointer-events: none; }
   #zone-sul { bottom: 30px; left: 0; width: 100%; } 
   #zone-norte { top: 30px; left: 0; width: 100%; transform: rotate(180deg); }
@@ -126,57 +88,42 @@
   #zone-oeste .tv-card { transform: rotate(90deg); margin: 60px 0; }
   #zone-leste { top: 0; right: 30px; height: 100%; flex-direction: column; }
   #zone-leste .tv-card { transform: rotate(-90deg); margin: 60px 0; }
-
-  .tv-card { 
-    position: relative; pointer-events: auto; width: 260px; flex-shrink: 0;
-    background: rgba(0, 0, 0, 0.9); border: 2px solid #666; border-radius: 12px;
-    padding: 15px; box-shadow: 0 0 30px rgba(0,0,0,0.8); color: #fff;
-  }
+  
+  .tv-card { position: relative; pointer-events: auto; width: 260px; flex-shrink: 0; background: rgba(0, 0, 0, 0.9); border: 2px solid #666; border-radius: 12px; padding: 15px; box-shadow: 0 0 30px rgba(0,0,0,0.8); color: #fff; }
   .tv-name { font-size: 20px; font-weight: bold; margin-bottom: 5px; }
-  .tv-status { text-align: center; font-weight: bold; font-size: 16px; margin-top: 10px; padding-top: 5px; border-top: 1px solid #444; color: #ddd; }
-
-  /* Overlay de Dados na TV */
-  #tv-dice-overlay {
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
-    width: 200px; height: 200px; display: flex; align-items: center; justify-content: center;
-    background: rgba(0,0,0,0.85); border: 4px solid #fff; border-radius: 20px;
-    font-size: 100px; font-weight: bold; color: #fff; z-index: 9999; opacity: 0;
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  }
+  .tv-status { text-align: center; font-weight: bold; font-size: 16px; margin-top: 10px; padding-top: 5px; border-top: 1px solid #444; color: #ddd; text-transform: uppercase; }
+  #tv-dice-overlay { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); border: 4px solid #fff; border-radius: 20px; font-size: 100px; font-weight: bold; color: #fff; z-index: 9999; opacity: 0; transition: transform 0.3s; }
   #tv-dice-overlay.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 
-  /* Status Colors Borders */
+  /* COLORS & UTILS */
   .mestre-card[data-status="cansado"], .tv-card[data-status="cansado"] { border-color: #f1c40f !important; }
   .mestre-card[data-status="critico"], .tv-card[data-status="critico"] { border-color: #e74c3c !important; }
   .mestre-card[data-status="caido"], .tv-card[data-status="caido"] { border-color: #555 !important; opacity: 0.6; }
   .mestre-card[data-status="poison"], .tv-card[data-status="poison"] { border-color: #2ecc71 !important; }
-
-  /* Botão Toggle Mestre na TV */
-  .btn-toggle-hud { position: absolute; top: 10px; right: 10px; z-index: 100; background: #333; color:#fff; border:1px solid #555; padding:5px; opacity: 0.5; cursor: pointer; }
+  
+  .hp-wrapper { display: flex; justify-content: space-between; font-size: 12px; color: #ccc; margin: 5px 0; }
+  
+  .btn-delete { display: none; position: absolute; top: 5px; right: 5px; background: #c0392b; color: #fff; border: 1px solid #fff; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; z-index: 10; }
+  .modo-edicao .btn-delete { display: block; }
+  .modo-edicao .input-nome, .modo-edicao .input-classe { pointer-events: auto; border-bottom: 1px dashed #777; background: rgba(255,255,255,0.05); }
 </style>
 </head>
 <body>
 
+<div id="connection-status"></div>
+
 <div id="login-screen">
   <div class="login-box">
     <h2 style="margin-top:0; color:#fff;">RPG STATION</h2>
-    <p style="color:#aaa; font-size:14px;">Digite o nome da sala para conectar</p>
-    
+    <p style="color:#aaa; font-size:14px;">Sala:</p>
     <input type="text" id="room-name" class="room-input" placeholder="ex: mesa" value="mesa">
-    
-    <button class="action-btn btn-tv-mode" onclick="startApp('tv')">
-      📺 ABRIR COMO TV
-    </button>
-    <button class="action-btn btn-remote-mode" onclick="startApp('remote')">
-      📱 ABRIR COMO CONTROLE
-    </button>
+    <button class="action-btn btn-tv-mode" onclick="startApp('tv')">📺 TV</button>
+    <button class="action-btn btn-remote-mode" onclick="startApp('remote')">📱 CONTROLE</button>
   </div>
 </div>
 
 <div id="game-container">
-  
   <div id="mapa-visual"></div>
-  <div id="efeito-chuva"></div>
   
   <div id="tv-layer">
     <div id="zone-norte" class="zone"></div>
@@ -184,14 +131,20 @@
     <div id="zone-leste" class="zone"></div>
     <div id="zone-oeste" class="zone"></div>
   </div>
-
   <div id="tv-dice-overlay">20</div>
 
-  <button class="btn-toggle-hud" onclick="toggleHUDVisibility()">📋</button>
-
   <div id="hud-mestre">
-    
     <div class="hud-header">
+      <div class="header-top">
+        <span style="font-weight:bold; color:#fff;">CONTROLE</span>
+        <button class="btn-gear" id="btn-editar" onclick="toggleEdicao()">⚙️</button>
+      </div>
+
+      <div class="dice-wrapper">
+        <button class="btn-dice" onclick="rolarD20()">🎲 ROLAR D20</button>
+        <div id="dice-display">-</div>
+      </div>
+
       <div class="grid-maps">
         <button class="btn-ctrl" id="btn-map-1" onclick="mudarCenario('1')">1</button>
         <button class="btn-ctrl" id="btn-map-2" onclick="mudarCenario('2')">2</button>
@@ -200,38 +153,50 @@
         <button class="btn-ctrl" id="btn-map-5" onclick="mudarCenario('5')">5</button>
         <button class="btn-ctrl" id="btn-map-6" onclick="mudarCenario('6')">6</button>
       </div>
+      
       <div class="grid-actions">
         <button class="btn-ctrl" id="btn-mod-d" onclick="mudarModo('d')">☀️ Dia</button>
         <button class="btn-ctrl" id="btn-mod-n" onclick="mudarModo('n')">🌙 Noite</button>
-        <button class="btn-ctrl" id="btn-rain" onclick="toggleRain()">🌧️ Chuva</button>
-        <button class="btn-ctrl" id="btn-tv-vis" onclick="toggleTvVisibility()">👁️ Cards</button>
+        <button class="btn-ctrl" id="btn-mod-i" onclick="mudarModo('i')">👹 Inv.</button>
+        
+        <button class="btn-ctrl" id="btn-music" onclick="toggleMusic()">🎵 Som</button>
+        <button class="btn-ctrl" id="btn-tv-vis" onclick="toggleTvVisibility()">👁️ TV</button>
       </div>
     </div>
 
-    <div class="hud-content" id="lista-mestre">
-      </div>
+    <div class="hud-content" id="lista-mestre"></div>
 
     <div class="hud-footer">
-      <div class="dice-wrapper">
-        <button class="btn-dice" onclick="rolarD20()">🎲 ROLAR D20</button>
-        <div id="dice-display">-</div>
-      </div>
       <div style="display:flex; gap:10px;">
         <button class="btn-ctrl" onclick="adicionarJogador()" style="flex:1;">+ Novo</button>
         <button class="btn-ctrl" onclick="resetarJogo()" style="flex:1; background:#442222; border-color:#c0392b;">Reset</button>
       </div>
     </div>
-
   </div>
 </div>
 
 <script>
-/* ================= CONFIGURAÇÃO ================= */
+/* ========================================================= */
+/* CONFIGURAÇÃO DE ÁUDIO E MAPAS */
+/* ========================================================= */
 const CONFIG = {
   pastas: { imagens: "maps/", audios: "sons/" },
   mapas: {
-    '1': { arquivo: 'cenario_1', sons: { d: 'dia.mp3', n: 'noite.mp3', i: 'invertido.mp3' } },
-    '2': { arquivo: 'cenario_2', sons: { d: 'dia.mp3', n: 'noite.mp3', i: 'invertido.mp3' } },
+    // CENÁRIO 1 (Com seu arquivo específico)
+    '1': { 
+      arquivo: 'cenario_1', 
+      sons: { 
+        d: 'cenario_1_dia.mp3',       // <--- SEU ARQUIVO AQUI
+        n: 'cenario_1_noite.mp3',     // Exemplo se tiver a noite
+        i: 'cenario_1_invertido.mp3'  // Exemplo se tiver o invertido
+      } 
+    },
+    // CENÁRIO 2 (Exemplo padrão)
+    '2': { 
+      arquivo: 'cenario_2', 
+      sons: { d: 'cenario_2_dia.mp3', n: 'cenario_2_noite.mp3', i: 'cenario_2_invertido.mp3' } 
+    },
+    // Demais cenários...
     '3': { arquivo: 'cenario_3', sons: { d: 'dia.mp3', n: 'noite.mp3', i: 'invertido.mp3' } },
     '4': { arquivo: 'cenario_4', sons: { d: 'dia.mp3', n: 'noite.mp3', i: 'invertido.mp3' } },
     '5': { arquivo: 'cenario_5', sons: { d: 'dia.mp3', n: 'noite.mp3', i: 'invertido.mp3' } },
@@ -243,240 +208,163 @@ const CONFIG = {
     { valor: "critico", label: "🔴 Debilitado" }, { valor: "caido", label: "💀 Caído" },
     { valor: "poison", label: "☠️ Envenenado" }, { valor: "invis", label: "👻 Invisível" }
   ],
-  // Jogadores Iniciais
   jogadores: [
     { nome: "Jogador 1", classe: "Guerreiro", hpMax: 50, hpAtual: 50, status: "", posicao: "sul" },
     { nome: "Jogador 2", classe: "Mago", hpMax: 30, hpAtual: 30, status: "", posicao: "norte" }
   ],
-  extensao_imagem: ".jpg", volume: 0.5, saveKey: "rpg_dm_v19_final"
+  extensao_imagem: ".jpg", volume: 0.5, saveKey: "rpg_dm_v30_audiofix"
 };
 
-/* ================= MOTOR DO JOGO ================= */
 const ui = {
   mestreList: document.getElementById("lista-mestre"),
-  zones: { 
-    norte: document.getElementById("zone-norte"), sul: document.getElementById("zone-sul"), 
-    leste: document.getElementById("zone-leste"), oeste: document.getElementById("zone-oeste") 
-  },
-  tvLayer: document.getElementById("tv-layer"),
-  diceDisplay: document.getElementById("dice-display"),
-  tvDiceOverlay: document.getElementById("tv-dice-overlay"),
-  rain: document.getElementById("efeito-chuva"),
-  visual: document.getElementById("mapa-visual"),
-  audioPlayers: {}
+  zones: { norte: document.getElementById("zone-norte"), sul: document.getElementById("zone-sul"), leste: document.getElementById("zone-leste"), oeste: document.getElementById("zone-oeste") },
+  tvLayer: document.getElementById("tv-layer"), diceDisplay: document.getElementById("dice-display"), tvDiceOverlay: document.getElementById("tv-dice-overlay"),
+  visual: document.getElementById("mapa-visual"), audioPlayers: {}, btnEdit: document.getElementById("btn-editar"), connStatus: document.getElementById("connection-status")
 };
 
-let estadoAtual = { mapa: '1', modo: 'd', chuva: false };
-let tvVisible = false; 
-let lastDiceRoll = { val: 0, id: 0 }; 
-let isRemote = false;
+let estadoAtual = { mapa: '1', modo: 'd', audio: true }; 
+let tvVisible = false; let lastDiceRoll = { val: 0, id: 0 }; 
+let isRemote = false; let modoEdicao = false;
 let faixaAtiva = 'A'; let trilhaAtualUrl = "";
-let peer = null; let conn = null;
+let peer = null; let conn = null; let roomName = ""; let peerIdPrefix = "rpg-sys-v30-";
 
-// Áudio Players
 ui.faixaA = new Audio(); ui.faixaA.loop = true; ui.faixaA.volume = 0;
 ui.faixaB = new Audio(); ui.faixaB.loop = true; ui.faixaB.volume = 0;
 
-/* --- INICIALIZAÇÃO --- */
-function startApp(mode) {
-  const roomName = document.getElementById("room-name").value.trim().toLowerCase() || "mesa";
-  const peerIdPrefix = "rpg-system-v19-";
-  
+/* --- INIT --- */
+async function startApp(mode) {
+  roomName = document.getElementById("room-name").value.trim().toLowerCase() || "mesa";
   document.getElementById("login-screen").style.display = "none";
   document.getElementById("game-container").style.display = "block";
-  
   isRemote = (mode === 'remote');
-  
+  try { if (navigator.wakeLock) await navigator.wakeLock.request('screen'); } catch(e){}
   if (isRemote) {
     document.body.classList.add("remote-active");
-    // Conectar à TV
-    setupPeer(null, peerIdPrefix + roomName); // Null ID = Random, connect to Host
+    setupPeer(null, peerIdPrefix + roomName); 
   } else {
-    // Iniciar como TV
-    setupPeer(peerIdPrefix + roomName, null); // Fixed ID = Host
+    setupPeer(peerIdPrefix + roomName, null);
   }
-  
-  carregarJogo(); 
-  updateUI();
-  carregarCena();
+  carregarJogo(); updateUI(); carregarCena();
+  setInterval(() => { if (conn && conn.open) conn.send({ heartbeat: true }); }, 2000);
 }
 
-/* --- CONEXÃO FÁCIL (PEERJS) --- */
+/* --- CONNECT --- */
 function setupPeer(myId, connectToId) {
-  peer = new Peer(myId); // Se myId for null, gera random
-
+  if (peer) peer.destroy();
+  peer = new Peer(myId);
   peer.on('open', (id) => {
-    console.log("Meu ID: " + id);
-    if(connectToId) {
-      // Sou Remote, conectar ao Host
-      conn = peer.connect(connectToId);
-      setupConnEvents();
-    }
+    ui.connStatus.className = 'online';
+    if(connectToId) connect(connectToId);
   });
-
-  peer.on('connection', (c) => {
-    // Sou Host, recebi conexão
-    conn = c;
-    setupConnEvents();
-    // Envia estado inicial
-    setTimeout(sendSync, 500);
-  });
-  
+  peer.on('connection', (c) => handleConnection(c));
   peer.on('error', (err) => {
-    if(err.type === 'unavailable-id') {
-      alert("ERRO: Já existe uma TV aberta com este nome de sala. Feche a outra aba ou escolha outro nome.");
-      location.reload();
-    }
+    if(err.type === 'unavailable-id') { alert("Sala ocupada!"); location.reload(); }
+    ui.connStatus.className = 'reconnecting';
+    if (isRemote && connectToId) setTimeout(() => connect(connectToId), 2000);
   });
+  peer.on('disconnected', () => { ui.connStatus.className = 'reconnecting'; if(myId) peer.reconnect(); });
 }
 
-function setupConnEvents() {
-  conn.on('data', (data) => {
-    // Atualiza dados locais com o que veio da rede
-    if(data.jogadores) CONFIG.jogadores = data.jogadores;
-    if(data.estado) { 
-      estadoAtual = data.estado; 
-      carregarCena(); // TV atualiza cena
-    }
-    if(data.tvVisible !== undefined) tvVisible = data.tvVisible;
-    
-    // Sincronia de Dados (Dice)
-    if(data.dice && data.dice.id !== lastDiceRoll.id) {
-      lastDiceRoll = data.dice;
-      showDiceVisual(lastDiceRoll.val);
-    }
+function connect(targetId) {
+  if (conn) conn.close();
+  ui.connStatus.className = 'reconnecting';
+  conn = peer.connect(targetId, { reliable: true });
+  handleConnection(conn);
+}
 
-    updateUI(false); // Atualiza visual sem reenviar
-    salvarJogo(false);
+function handleConnection(c) {
+  conn = c;
+  conn.on('open', () => {
+    ui.connStatus.className = 'online';
+    if(!isRemote) setTimeout(sendSync, 500);
+  });
+  conn.on('data', (data) => {
+    if (data.heartbeat) return;
+    if(data.jogadores) CONFIG.jogadores = data.jogadores;
+    if(data.estado) { estadoAtual = data.estado; applyAudioState(); carregarCena(); }
+    if(data.tvVisible !== undefined) tvVisible = data.tvVisible;
+    if(data.dice && data.dice.id !== lastDiceRoll.id) { lastDiceRoll = data.dice; showDiceVisual(lastDiceRoll.val); }
+    updateUI(false); salvarJogo(false);
+  });
+  conn.on('close', () => {
+    ui.connStatus.className = 'reconnecting';
+    if (isRemote) setTimeout(() => connect(peerIdPrefix + roomName), 1000);
   });
 }
 
 function sendSync() {
-  if(conn && conn.open) {
-    conn.send({
-      jogadores: CONFIG.jogadores,
-      estado: estadoAtual,
-      tvVisible: tvVisible,
-      dice: lastDiceRoll
-    });
-  }
+  if(conn && conn.open) conn.send({ jogadores: CONFIG.jogadores, estado: estadoAtual, tvVisible: tvVisible, dice: lastDiceRoll });
   salvarJogo();
 }
+function fullUpdate() { updateUI(); carregarCena(); sendSync(); }
 
-function fullUpdate() {
-  updateUI();
-  carregarCena();
-  sendSync();
-}
-
-/* --- LÓGICA DE DADOS --- */
+/* --- DADOS --- */
 function rolarD20() {
   const val = Math.floor(Math.random() * 20) + 1;
-  lastDiceRoll = { val: val, id: Date.now() };
-  showDiceVisual(val);
-  fullUpdate();
+  lastDiceRoll = { val: val, id: Date.now() }; showDiceVisual(val); fullUpdate();
 }
-
 function showDiceVisual(val) {
-  // HUD
-  ui.diceDisplay.innerText = val;
-  ui.diceDisplay.style.color = val===20?"#2ecc71":(val===1?"#e74c3c":"#f1c40f");
-  
-  // TV Overlay
+  ui.diceDisplay.innerText = val; ui.diceDisplay.style.color = val===20?"#2ecc71":(val===1?"#e74c3c":"#f1c40f");
   if(!isRemote) {
-    ui.tvDiceOverlay.innerText = val;
-    ui.tvDiceOverlay.style.borderColor = val===20?"#2ecc71":(val===1?"#e74c3c":"#fff");
-    ui.tvDiceOverlay.classList.add("show");
-    setTimeout(() => ui.tvDiceOverlay.classList.remove("show"), 3000);
+    ui.tvDiceOverlay.innerText = val; ui.tvDiceOverlay.style.borderColor = val===20?"#2ecc71":(val===1?"#e74c3c":"#fff");
+    ui.tvDiceOverlay.classList.add("show"); setTimeout(() => ui.tvDiceOverlay.classList.remove("show"), 3000);
   }
 }
 
-/* --- LÓGICA DE CENA --- */
+/* --- CONTROLES --- */
 function mudarCenario(id) { estadoAtual.mapa = id; fullUpdate(); }
 function mudarModo(id) { estadoAtual.modo = id; fullUpdate(); }
-function toggleRain() { estadoAtual.chuva = !estadoAtual.chuva; fullUpdate(); }
 function toggleTvVisibility() { tvVisible = !tvVisible; fullUpdate(); }
+function toggleHUDVisibility() { document.getElementById('hud-mestre').classList.toggle('oculto'); }
+function toggleMusic() { estadoAtual.audio = !estadoAtual.audio; applyAudioState(); fullUpdate(); }
 
 /* --- RENDER UI --- */
 function updateUI(propagate = true) {
-  // 1. Atualiza Botões de Controle
-  document.querySelectorAll('.btn-ctrl').forEach(b => b.classList.remove('active', 'rain-active', 'tv-active'));
+  document.querySelectorAll('.btn-ctrl').forEach(b => {
+    b.classList.remove('active', 'tv-active', 'music-on', 'music-off');
+  });
   
-  if(document.getElementById('btn-map-' + estadoAtual.mapa))
-     document.getElementById('btn-map-' + estadoAtual.mapa).classList.add('active');
+  if(document.getElementById('btn-map-' + estadoAtual.mapa)) document.getElementById('btn-map-' + estadoAtual.mapa).classList.add('active');
+  if(document.getElementById('btn-mod-' + estadoAtual.modo)) document.getElementById('btn-mod-' + estadoAtual.modo).classList.add('active');
+  if(tvVisible) document.getElementById('btn-tv-vis').classList.add('tv-active');
   
-  if(document.getElementById('btn-mod-' + estadoAtual.modo))
-     document.getElementById('btn-mod-' + estadoAtual.modo).classList.add('active');
-  
-  if(estadoAtual.chuva) document.getElementById('btn-rain').classList.add('rain-active');
-  if(tvVisible) document.getElementById('btn-tv-vis').classList.add('tv-active'); // Botão Olho fica verde
+  const btnMusic = document.getElementById('btn-music');
+  if(estadoAtual.audio) { btnMusic.classList.add('music-on'); btnMusic.innerText = "🎵 Som"; } 
+  else { btnMusic.classList.add('music-off'); btnMusic.innerText = "⏸️ Mudo"; }
 
-  // 2. Visibilidade Layers (TV)
   if(!isRemote) {
     if(tvVisible) ui.tvLayer.classList.add("visivel"); else ui.tvLayer.classList.remove("visivel");
-    if(estadoAtual.chuva) ui.rain.classList.add("ativo"); else ui.rain.classList.remove("ativo");
   }
 
-  // 3. Renderiza Listas
-  ui.mestreList.innerHTML = "";
-  Object.values(ui.zones).forEach(z => z.innerHTML = "");
-
+  ui.mestreList.innerHTML = ""; Object.values(ui.zones).forEach(z => z.innerHTML = "");
   CONFIG.jogadores.forEach((char, idx) => {
     const pct = Math.max(0, Math.min(100, (char.hpAtual / char.hpMax) * 100));
     let cor = "hp-verde"; if (pct < 50) cor = "hp-amarelo"; if (pct < 20) cor = "hp-vermelho"; if (char.hpAtual <= 0) cor = "hp-morto";
     const statusObj = CONFIG.listaStatus.find(s => s.valor === char.status);
     const statusTxt = statusObj ? statusObj.label : "";
 
-    // === CARD MESTRE (CONTROLE) ===
     const mCard = document.createElement("div");
-    mCard.className = "mestre-card";
-    mCard.setAttribute("data-status", char.status);
-    
-    // Select Status Options
+    mCard.className = "mestre-card"; mCard.setAttribute("data-status", char.status);
     let stOpts = ""; CONFIG.listaStatus.forEach(s => stOpts += `<option value="${s.valor}" ${char.status===s.valor?'selected':''}>${s.label}</option>`);
-    
-    // Select Pos Options
-    const pSul = char.posicao === "sul" ? "selected" : "";
-    const pNorte = char.posicao === "norte" ? "selected" : "";
-    const pLeste = char.posicao === "leste" ? "selected" : "";
-    const pOeste = char.posicao === "oeste" ? "selected" : "";
+    const pSul=char.posicao==="sul"?"selected":"", pNorte=char.posicao==="norte"?"selected":"", pLeste=char.posicao==="leste"?"selected":"", pOeste=char.posicao==="oeste"?"selected":"";
 
     mCard.innerHTML = `
-      <div class="card-top">
-        <input type="text" class="input-nome" value="${char.nome}" onchange="edit(${idx}, 'nome', this.value)">
-        <button onclick="remover(${idx})" style="background:transparent; border:none; color:#c0392b; font-weight:bold;">✕</button>
-      </div>
-      <input type="text" class="input-classe" value="${char.classe}" onchange="edit(${idx}, 'classe', this.value)">
-      
+      <div class="card-top"><input type="text" class="input-nome" value="${char.nome}" onchange="edit(${idx},'nome',this.value)"><button class="btn-delete" onclick="remover(${idx})">✕</button></div>
+      <input type="text" class="input-classe" value="${char.classe}" onchange="edit(${idx},'classe',this.value)">
       <div class="hp-bar-bg"><div class="hp-bar-fill ${cor}" style="width:${pct}%"></div></div>
       <div class="hp-wrapper"><span>${Math.ceil(char.hpAtual)} / ${char.hpMax}</span></div>
-
-      <div class="card-actions">
-        <button class="btn-dmg harm" onclick="hp(${idx}, -5)">-5</button>
-        <button class="btn-dmg harm" onclick="hp(${idx}, -1)">-1</button>
-        <button class="btn-dmg heal" onclick="hp(${idx}, 1)">+1</button>
-        <button class="btn-dmg heal" onclick="hp(${idx}, 5)">+5</button>
-      </div>
-
-      <div class="card-settings">
-        <select class="select-style" onchange="st(${idx}, this.value)">${stOpts}</select>
-        <select class="select-style" onchange="edit(${idx}, 'posicao', this.value)">
-           <option value="sul" ${pSul}>Sul</option><option value="norte" ${pNorte}>Norte</option>
-           <option value="leste" ${pLeste}>Leste</option><option value="oeste" ${pOeste}>Oeste</option>
-        </select>
-      </div>
+      <div class="card-actions"><button class="btn-dmg harm" onclick="hp(${idx},-5)">-5</button><button class="btn-dmg harm" onclick="hp(${idx},-1)">-1</button><button class="btn-dmg heal" onclick="hp(${idx},1)">+1</button><button class="btn-dmg heal" onclick="hp(${idx},5)">+5</button></div>
+      <div class="card-settings"><select class="select-style" onchange="st(${idx},this.value)">${stOpts}</select><select class="select-style" onchange="edit(${idx},'posicao',this.value)"><option value="sul" ${pSul}>Sul</option><option value="norte" ${pNorte}>Norte</option><option value="leste" ${pLeste}>Leste</option><option value="oeste" ${pOeste}>Oeste</option></select></div>
     `;
     ui.mestreList.appendChild(mCard);
 
-    // === CARD TV (VISUAL) ===
     if(!isRemote) {
-      const tCard = document.createElement("div");
-      tCard.className = "tv-card";
-      tCard.setAttribute("data-status", char.status);
+      const tCard = document.createElement("div"); tCard.className = "tv-card"; tCard.setAttribute("data-status", char.status);
       tCard.innerHTML = `
         <div class="tv-name">${char.nome}</div>
-        <div style="font-size:12px; color:#aaa; text-transform:uppercase;">${char.classe}</div>
-        <div class="hp-bar-bg" style="height:15px; margin:10px 0;"><div class="hp-bar-fill ${cor}" style="width:${pct}%"></div></div>
+        <div style="font-size:12px;color:#aaa;text-transform:uppercase;margin-bottom:5px;">${char.classe}</div>
+        <div class="hp-wrapper" style="font-size:14px;font-weight:bold;color:#fff;"><span>PV</span><span>${Math.ceil(char.hpAtual)} / ${char.hpMax}</span></div>
+        <div class="hp-bar-bg" style="height:15px;margin:0 0 10px 0;"><div class="hp-bar-fill ${cor}" style="width:${pct}%"></div></div>
         <div class="tv-status">${statusTxt}</div>
       `;
       (ui.zones[char.posicao] || ui.zones.sul).appendChild(tCard);
@@ -484,37 +372,49 @@ function updateUI(propagate = true) {
   });
 }
 
-/* --- MANIPULADORES JOGADORES --- */
-window.hp = (idx, val) => {
-  const c = CONFIG.jogadores[idx]; c.hpAtual += val;
-  if(c.hpAtual > c.hpMax) c.hpAtual = c.hpMax; if(c.hpAtual < 0) c.hpAtual = 0;
-  // Auto Status
-  const pct = (c.hpAtual/c.hpMax)*100;
-  let ns = ""; if(c.hpAtual<=0) ns="caido"; else if(pct<20) ns="critico"; else if(pct<50) ns="cansado";
-  if(c.hpAtual<=0 || ["","cansado","critico","caido"].includes(c.status) || (c.hpAtual>0 && c.status==="caido")) c.status = ns;
-  fullUpdate();
-};
-window.st = (idx, val) => { CONFIG.jogadores[idx].status = val; fullUpdate(); };
-window.edit = (idx, f, v) => { CONFIG.jogadores[idx][f] = v; fullUpdate(); };
-window.adicionarJogador = () => { CONFIG.jogadores.push({nome:"Novo", classe:"Heroi", hpMax:30, hpAtual:30, status:"", posicao:"sul"}); fullUpdate(); };
-window.remover = (idx) => { if(confirm("Excluir?")) { CONFIG.jogadores.splice(idx, 1); fullUpdate(); } };
+window.hp=(idx,val)=>{const c=CONFIG.jogadores[idx];c.hpAtual+=val;if(c.hpAtual>c.hpMax)c.hpAtual=c.hpMax;if(c.hpAtual<0)c.hpAtual=0;const pct=(c.hpAtual/c.hpMax)*100;if(c.hpAtual<=0){c.status="caido";}else{const l=["","cansado","critico","caido"];if(l.includes(c.status)){if(pct<20)c.status="critico";else if(pct<50)c.status="cansado";else c.status="";}}fullUpdate();}
+window.st=(idx,val)=>{CONFIG.jogadores[idx].status=val;fullUpdate();}
+window.edit=(idx,f,v)=>{CONFIG.jogadores[idx][f]=v;fullUpdate();}
+window.adicionarJogador=()=>{CONFIG.jogadores.push({nome:"Novo",classe:"Heroi",hpMax:30,hpAtual:30,status:"",posicao:"sul"});fullUpdate();}
+window.remover=(idx)=>{if(confirm("Excluir?")){CONFIG.jogadores.splice(idx,1);fullUpdate();}}
+window.toggleEdicao=()=>{modoEdicao=!modoEdicao;ui.btnEdit.classList.toggle("ativo");document.getElementById("hud-mestre").classList.toggle("modo-edicao");}
 
-/* --- AUDIO --- */
+/* --- AUDIO SMOOTH --- */
+function applyAudioState() {
+  if (isRemote) return;
+  const active = faixaAtiva === 'A' ? ui.faixaA : ui.faixaB;
+  if (!estadoAtual.audio) fadeOutAndPause(active);
+  else if (active.src && active.paused) fadeInAndPlay(active);
+}
+function fadeOutAndPause(audio) {
+  if(audio.fadeInt) clearInterval(audio.fadeInt);
+  audio.fadeInt = setInterval(() => {
+    if(audio.volume > 0.05) audio.volume -= 0.05; else { audio.volume = 0; audio.pause(); clearInterval(audio.fadeInt); }
+  }, 50);
+}
+function fadeInAndPlay(audio) {
+  audio.volume = 0; audio.play().catch(()=>{});
+  if(audio.fadeInt) clearInterval(audio.fadeInt);
+  audio.fadeInt = setInterval(() => {
+    if(audio.volume < CONFIG.volume - 0.05) audio.volume += 0.05; else { audio.volume = CONFIG.volume; clearInterval(audio.fadeInt); }
+  }, 50);
+}
 function audioCrossfade(urlNovo) {
   if(urlNovo === trilhaAtualUrl) return; trilhaAtualUrl = urlNovo;
   const ent = faixaAtiva === 'A' ? ui.faixaB : ui.faixaA;
   const sai = faixaAtiva === 'A' ? ui.faixaA : ui.faixaB;
   faixaAtiva = faixaAtiva === 'A' ? 'B' : 'A';
-  ent.src = CONFIG.pastas.audios + urlNovo; ent.volume = 0; ent.play().catch(()=>{});
+  ent.src = CONFIG.pastas.audios + urlNovo; ent.volume = 0; 
+  if (estadoAtual.audio) ent.play().catch(()=>{});
   let vol = 0; if(window.fadeInt) clearInterval(window.fadeInt);
   window.fadeInt = setInterval(() => {
-    vol += 0.05; if(vol >= CONFIG.volume) { ent.volume = CONFIG.volume; sai.volume = 0; sai.pause(); clearInterval(window.fadeInt); }
-    else { ent.volume = vol; sai.volume = Math.max(0, CONFIG.volume - vol); }
+    vol += 0.05; if(vol >= CONFIG.volume) { if (estadoAtual.audio) ent.volume = CONFIG.volume; sai.volume = 0; sai.pause(); clearInterval(window.fadeInt); }
+    else { if (estadoAtual.audio) ent.volume = vol; sai.volume = Math.max(0, CONFIG.volume - vol); }
   }, 100);
 }
 
 function carregarCena() {
-  if(isRemote) return; // Remoto não carrega assets
+  if(isRemote) return; 
   const m = CONFIG.mapas[estadoAtual.mapa]; const mod = CONFIG.estados[estadoAtual.modo]; if(!m)return;
   const url = CONFIG.pastas.imagens + m.arquivo + mod.sufixo + CONFIG.extensao_imagem;
   const img = new Image(); img.src = url;
@@ -522,13 +422,21 @@ function carregarCena() {
   if(m.sons && m.sons[estadoAtual.modo]) audioCrossfade(m.sons[estadoAtual.modo]);
 }
 
-/* --- PERSISTENCIA --- */
 function salvarJogo(save=true) { if(save) localStorage.setItem(CONFIG.saveKey, JSON.stringify(CONFIG.jogadores)); }
 function carregarJogo() { const s = localStorage.getItem(CONFIG.saveKey); if(s) try{CONFIG.jogadores=JSON.parse(s)}catch(e){} }
 window.resetarJogo = () => { if(confirm("Reset?")) { localStorage.removeItem(CONFIG.saveKey); location.reload(); } };
 window.toggleHUDVisibility = () => { document.getElementById('hud-mestre').classList.toggle('oculto'); };
 
-init(); function init() { /* wait */ }
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+  if(!isRemote) {
+    const key = e.key.toLowerCase();
+    if(CONFIG.mapas[key]) mudarCenario(key);
+    if(CONFIG.estados[key]) mudarModo(key);
+    if(key === 'h') toggleHUDVisibility();
+    if(key === 't') toggleTvVisibility();
+  }
+});
 </script>
 </body>
 </html>
