@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>RPG DM Station - Command Center</title>
+<title>RPG DM Station - V18 Mobile</title>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <style>
   /* --- GERAL --- */
-  body { margin: 0; padding: 0; background: #050505; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; padding: 0; background: #050505; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; color: #e0e0e0; }
   #game-container { position: relative; width: 100vw; height: 100vh; display: none; }
 
   /* TELA INTRO */
@@ -22,162 +23,174 @@
     border: 1px solid #444; background: #111; color: #fff; border-radius: 8px;
     display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s;
   }
-  .intro-btn:hover { background: #222; transform: scale(1.05); }
   .intro-btn.primary { border-color: #3498db; background: rgba(52, 152, 219, 0.1); }
 
-  /* MAPA */
+  /* --- VISUAIS TV --- */
   #mapa-visual { width: 100%; height: 100%; background-size: cover; background-position: center; transition: 0.5s; }
   .modo-dia #mapa-visual { filter: brightness(1) contrast(1.05); }
   .modo-noite #mapa-visual { filter: brightness(0.5) contrast(1.2) hue-rotate(-15deg); }
   .modo-invertido #mapa-visual { filter: invert(1) hue-rotate(180deg) brightness(0.8) contrast(1.3); }
 
-  /* CHUVA */
   #efeito-chuva { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0.05)); }
   #efeito-chuva.ativo { display: block; animation: flash 8s infinite; }
   #efeito-chuva::before { content: ""; position: absolute; width: 100%; height: 100%; top: -100%; left: 0; background-image: repeating-linear-gradient(transparent, transparent 95%, rgba(164, 199, 255, 0.4) 98%); animation: cair 0.7s infinite linear; }
   @keyframes cair { to { transform: translateY(100%); } } @keyframes flash { 96%, 99% { background-color: rgba(255, 255, 255, 0.15); } }
 
-  /* HUD MESTRE */
+  /* --- HUD MESTRE (SIDEBAR PC) --- */
   #hud-mestre {
-    position: absolute; top: 0; right: 0; width: 300px; height: 100%;
+    position: absolute; top: 0; right: 0; width: 320px; height: 100%;
     background: rgba(18, 18, 18, 0.98); border-left: 1px solid #333;
-    padding: 15px; box-sizing: border-box; overflow-y: auto; color: #e0e0e0;
     display: flex; flex-direction: column; z-index: 50; transition: transform 0.3s ease;
   }
   #hud-mestre.oculto { transform: translateX(100%); }
 
-  /* MODO REMOTO (CELULAR) */
-  body.remote-active #mapa-visual, body.remote-active #efeito-chuva, body.remote-active #tv-layer, body.remote-active .controles-tela { display: none !important; }
-  body.remote-active #hud-mestre { width: 100vw; border: none; background: #000; transform: none !important; }
+  /* Áreas do HUD */
+  .hud-header { padding: 10px; background: #111; border-bottom: 1px solid #333; }
+  .hud-content { flex: 1; overflow-y: auto; padding: 10px; } /* Área de rolagem */
+  .hud-footer { padding: 10px; background: #111; border-top: 1px solid #333; }
 
-  /* --- PAINEL DE CONTROLE DE CENÁRIO (NOVO) --- */
-  .control-group { 
-    background: rgba(255,255,255,0.05); border: 1px solid #333; border-radius: 6px; 
-    padding: 10px; margin-bottom: 15px; 
-  }
-  .control-title { font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 8px; text-align: center; }
+  /* --- CONTROLES COMPACTOS (MOBILE) --- */
+  .ctrl-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-bottom: 8px; }
+  .ctrl-grid-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 8px; }
   
-  .btn-row { display: flex; gap: 5px; margin-bottom: 5px; justify-content: center; }
   .btn-ctrl {
-    flex: 1; padding: 10px 0; background: #222; border: 1px solid #444; color: #aaa;
-    border-radius: 4px; cursor: pointer; font-size: 14px; transition: 0.2s;
+    padding: 12px 0; background: #222; border: 1px solid #444; color: #888;
+    border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;
   }
-  .btn-ctrl:hover { background: #333; color: #fff; }
-  .btn-ctrl.active { background: #3498db; color: #fff; border-color: #3498db; box-shadow: 0 0 10px rgba(52, 152, 219, 0.4); }
+  .btn-ctrl.active { background: #3498db; color: #fff; border-color: #fff; }
   .btn-ctrl.rain-active { background: #34495e; color: #3498db; border-color: #3498db; }
+  .btn-ctrl.tv-active { background: #2ecc71; color: #fff; border-color: #fff; } /* Botão Olho */
 
-  /* Cards e Listas */
-  .mestre-card { background: rgba(255, 255, 255, 0.05); border-radius: 4px; padding: 10px; margin-bottom: 10px; border: 1px solid #333; position: relative; }
-  .header-grupo { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 10px; }
-  .dice-section { background: rgba(0,0,0,0.3); border: 1px solid #333; border-radius: 6px; padding: 10px; text-align: center; margin-bottom: 15px; }
-  .btn-dice { width: 100%; padding: 12px; background: #222; color: #aaa; border: 1px solid #444; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px; }
-  #dice-result { font-size: 24px; font-weight: bold; margin-top: 5px; min-height: 32px; display: flex; align-items: center; justify-content: center; }
-  .crit-sucesso { color: #2ecc71; } .crit-falha { color: #e74c3c; } .normal-roll { color: #f1c40f; }
+  /* DADOS */
+  .dice-box { display: flex; align-items: center; gap: 10px; background: #222; padding: 5px; border-radius: 6px; border: 1px solid #333; }
+  .btn-dice { flex: 1; padding: 12px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; font-weight: bold; cursor: pointer; }
+  .btn-dice:active { background: #555; }
+  #dice-display { font-size: 24px; font-weight: bold; width: 50px; text-align: center; color: #f1c40f; }
 
-  /* ZONAS DA TV */
+  /* --- ESTILOS ESPECÍFICOS PARA CELULAR (REMOTE) --- */
+  body.remote-active #hud-mestre {
+    width: 100vw; height: 100vh; position: fixed; left: 0; top: 0;
+    border: none; transform: none !important;
+  }
+  body.remote-active #mapa-visual, 
+  body.remote-active #efeito-chuva, 
+  body.remote-active #tv-layer, 
+  body.remote-active .controles-tela { display: none !important; }
+
+  /* --- ZONAS DA TV --- */
   #tv-layer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 20; display: none; }
   #tv-layer.visivel { display: block; }
-  .zone { position: absolute; display: flex; align-items: center; justify-content: center; gap: 15px; pointer-events: none; }
-  #zone-sul { bottom: 10px; left: 0; width: 100%; flex-direction: row; }
-  #zone-norte { top: 10px; left: 0; width: 100%; flex-direction: row; transform: rotate(180deg); }
-  #zone-oeste { top: 0; left: 10px; height: 100%; flex-direction: column; }
+  .zone { position: absolute; display: flex; align-items: center; justify-content: center; gap: 20px; pointer-events: none; }
+  #zone-sul { bottom: 20px; left: 0; width: 100%; flex-direction: row; }
+  #zone-norte { top: 20px; left: 0; width: 100%; flex-direction: row; transform: rotate(180deg); }
+  #zone-oeste { top: 0; left: 20px; height: 100%; flex-direction: column; }
   #zone-oeste .tv-card { transform: rotate(90deg); margin: 60px 0; }
-  #zone-leste { top: 0; right: 10px; height: 100%; flex-direction: column; }
+  #zone-leste { top: 0; right: 20px; height: 100%; flex-direction: column; }
   #zone-leste .tv-card { transform: rotate(-90deg); margin: 60px 0; }
 
   /* CARD TV */
-  .tv-card { position: relative; pointer-events: auto; width: 220px; flex-shrink: 0; background: rgba(0, 0, 0, 0.9); border: 1px solid #555; border-radius: 8px; padding: 12px; box-shadow: 0 0 15px #000; color: #fff; }
-  #zone-sul .tv-card { border-bottom: 4px solid #3498db; }
-  #zone-norte .tv-card { border-bottom: 4px solid #e74c3c; }
-  #zone-oeste .tv-card { border-bottom: 4px solid #2ecc71; }
-  #zone-leste .tv-card { border-bottom: 4px solid #f1c40f; }
-  .status-tv { text-align: center; font-weight: bold; margin-top: 8px; font-size: 13px; color: #eee; padding-top: 5px; border-top: 1px solid #333; }
+  .tv-card { 
+    position: relative; pointer-events: auto; width: 240px; flex-shrink: 0; 
+    background: rgba(0, 0, 0, 0.9); border: 2px solid #555; border-radius: 12px; 
+    padding: 15px; box-shadow: 0 0 25px #000; color: #fff; 
+  }
+  #zone-sul .tv-card { border-bottom: 6px solid #3498db; }
+  #zone-norte .tv-card { border-bottom: 6px solid #e74c3c; }
+  #zone-oeste .tv-card { border-bottom: 6px solid #2ecc71; }
+  #zone-leste .tv-card { border-bottom: 6px solid #f1c40f; }
+  .status-tv { text-align: center; font-weight: bold; margin-top: 10px; font-size: 16px; color: #eee; padding-top: 5px; border-top: 1px solid #333; text-transform: uppercase;}
 
-  /* Sync Panel */
-  #sync-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; border: 1px solid #444; padding: 20px; border-radius: 8px; z-index: 2000; text-align: center; color: #fff; box-shadow: 0 0 30px #000; display: none; width: 300px; }
-  #sync-panel.visivel { display: block; }
-  .sync-input { width: 100%; padding: 10px; margin: 10px 0; background: #222; border: 1px solid #555; color: #fff; text-align: center; font-size:16px; }
-  .sync-btn { width: 100%; padding: 12px; background: #3498db; border: none; color: #fff; cursor: pointer; font-weight: bold; font-size: 16px; margin-bottom: 5px; border-radius:4px; }
-  #status-conexao { position: absolute; top: 10px; right: 10px; color: #2ecc71; font-size: 12px; font-weight: bold; z-index: 101; display: none; background: rgba(0,0,0,0.8); padding: 5px 10px; border-radius: 4px; }
+  /* OVERLAY DE DADOS NA TV (QUANDO ROLA) */
+  #tv-dice-overlay {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+    font-size: 120px; font-weight: bold; color: #fff; text-shadow: 0 0 20px rgba(0,0,0,0.8);
+    z-index: 1000; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: rgba(0,0,0,0.7); padding: 40px; border-radius: 20px; border: 2px solid #fff;
+    pointer-events: none; opacity: 0;
+  }
+  #tv-dice-overlay.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 
-  /* Inputs e Botoes */
-  .input-nome, .input-classe { background: transparent; border: none; width: 100%; color: white; pointer-events: none; }
-  .input-nome { font-weight: bold; font-size: 15px; } .input-classe { font-size: 11px; color: #aaa; text-transform: uppercase; }
-  .modo-edicao .input-nome, .modo-edicao .input-classe { pointer-events: auto; border-bottom: 1px dashed #777; background: rgba(255,255,255,0.05); }
-  .hp-wrapper { display: flex; justify-content: space-between; font-size: 11px; color: #ccc; margin: 5px 0; }
-  .hp-track { background: #222; height: 6px; border-radius: 3px; width: 100%; overflow: hidden; }
+  /* --- LISTA DO MESTRE --- */
+  .mestre-card { 
+    background: rgba(255, 255, 255, 0.05); border-radius: 6px; 
+    padding: 8px; margin-bottom: 8px; border: 1px solid #333; position: relative; 
+  }
+  .input-nome { background: transparent; border: none; width: 100%; color: white; font-weight: bold; font-size: 16px; }
+  
+  .hp-wrapper { display: flex; justify-content: space-between; font-size: 12px; color: #ccc; margin: 5px 0; }
+  .hp-track { background: #222; height: 8px; border-radius: 4px; width: 100%; overflow: hidden; margin-bottom: 5px; }
   .hp-fill { height: 100%; transition: width 0.4s; }
   .hp-verde { background: #2ecc71; } .hp-amarelo { background: #f1c40f; } .hp-vermelho { background: #e74c3c; } .hp-morto { background: #444; }
-  .controles { display: flex; gap: 2px; margin-top: 5px; }
-  .btn { flex: 1; background: #222; border: 1px solid #444; color: #aaa; cursor: pointer; font-size: 10px; padding: 10px 0; }
-  .btn:hover { color: #fff; background: #333; }
-  .select-posicao, .status-select { background: #111; color: #aaa; border: 1px solid #333; font-size: 12px; width: 100%; margin-top: 5px; padding: 5px; }
-  
-  .btn-delete { display: none; position: absolute; top: -5px; right: -5px; background: #c0392b; color: #fff; border: 1px solid #fff; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; z-index: 10; }
+
+  .controles { display: flex; gap: 2px; }
+  .btn { flex: 1; background: #222; border: 1px solid #444; color: #aaa; cursor: pointer; padding: 10px 0; font-size: 14px; }
+  .btn:active { background: #444; color: #fff; }
+
+  /* UTILS */
+  .btn-delete { position: absolute; top: 5px; right: 5px; background: #c0392b; color: #fff; border:none; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; display: none; }
   .modo-edicao .btn-delete { display: block; }
-  .btn-add-char { display: none; width: 100%; padding: 10px; background: rgba(39, 174, 96, 0.2); border: 1px dashed #27ae60; color: #2ecc71; cursor: pointer; margin-bottom: 15px; font-weight: bold; }
-  .modo-edicao .btn-add-char { display: block; }
+  
+  .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .btn-gear { background: none; border: none; color: #555; font-size: 20px; padding: 0 10px; cursor: pointer; }
+  .btn-gear.ativo { color: #fff; }
 
+  /* MODAL SYNC */
+  #sync-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; border: 1px solid #444; padding: 20px; border-radius: 8px; z-index: 2000; text-align: center; color: #fff; display: none; width: 300px; box-shadow: 0 0 50px #000; }
+  #sync-panel.visivel { display: block; }
+  .sync-input { width: 100%; padding: 10px; margin: 10px 0; background: #222; border: 1px solid #555; color: #fff; text-align: center; font-size: 16px; }
+  .sync-btn { width: 100%; padding: 12px; background: #3498db; border: none; color: #fff; font-weight: bold; border-radius: 4px; margin-top: 5px; }
+  
   .controles-tela { position: absolute; top: 10px; left: 10px; z-index: 100; display: flex; gap: 10px; }
-  .btn-float { background: rgba(0,0,0,0.6); color: #fff; border: 1px solid #444; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; transition: 0.2s; }
-  .btn-gear { background: none; border: none; cursor: pointer; font-size: 18px; color: #555; transition: 0.3s; padding: 0; }
-  .btn-gear:hover { color: #fff; } .btn-gear.ativo { color: #fff; transform: rotate(90deg); text-shadow: 0 0 5px #fff; }
-
-  .status-border[data-status="cansado"] { border-color: #f1c40f !important; }
-  .status-border[data-status="critico"] { border-color: #e74c3c !important; background: rgba(231, 76, 60, 0.1); }
-  .status-border[data-status="caido"] { border-color: #555 !important; opacity: 0.7; filter: grayscale(1); }
-  .status-border[data-status="poison"] { border-color: #2ecc71 !important; }
-
-  .rodape { text-align: center; font-size: 10px; color: #555; margin-top: auto; padding-top: 10px; padding-bottom: 20px; }
+  .btn-float { background: rgba(0,0,0,0.6); color: #fff; border: 1px solid #444; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 </style>
 </head>
 <body>
 
 <div id="intro-screen">
-  <h1>RPG DM Station</h1>
-  <button class="intro-btn primary" onclick="startApp('tv')">📺 SOU A TV (HOST)</button>
-  <button class="intro-btn" onclick="startApp('remote')">📱 SOU O CONTROLE</button>
+  <h1 style="margin-bottom:30px;">RPG Station</h1>
+  <button class="intro-btn primary" onclick="startApp('tv')">📺 TV (MESA)</button>
+  <button class="intro-btn" onclick="startApp('remote')">📱 CELULAR (CONTROLE)</button>
 </div>
 
 <div id="game-container">
+  
   <div id="mapa-visual"></div>
   <div id="efeito-chuva"></div>
-  <div id="status-conexao">🟢 CONECTADO</div>
+  <div id="tv-layer">
+    <div id="zone-norte" class="zone"></div>
+    <div id="zone-sul" class="zone"></div>
+    <div id="zone-leste" class="zone"></div>
+    <div id="zone-oeste" class="zone"></div>
+  </div>
+  <div id="tv-dice-overlay">20</div>
+
+  <div class="controles-tela">
+    <button class="btn-float" onclick="openSync()">📡</button>
+  </div>
 
   <div id="sync-panel">
-    <h3 id="sync-title">Conexão</h3>
+    <h3 style="margin-top:0;">Conexão</h3>
     <div id="host-ui" style="display:none;">
-      <p>ID da TV:</p>
+      <p style="color:#aaa; font-size:12px;">ID DA TV:</p>
       <input type="text" id="my-peer-id" class="sync-input" readonly onclick="this.select()">
-      <button class="sync-btn" onclick="closeSync()">OK</button>
+      <button class="sync-btn" onclick="closeSync()">Fechar</button>
     </div>
     <div id="remote-ui" style="display:none;">
-      <p>Digite o ID da TV:</p>
-      <input type="text" id="target-peer-id" class="sync-input" placeholder="Ex: rpg-999">
+      <p style="color:#aaa; font-size:12px;">DIGITE O ID DA TV:</p>
+      <input type="text" id="target-peer-id" class="sync-input">
       <button class="sync-btn" onclick="connectToPeer()">Conectar</button>
     </div>
   </div>
 
-  <div class="controles-tela">
-    <button class="btn-float" id="btn-tv-toggle" onclick="toggleTV()">📺</button>
-    <button class="btn-float" onclick="toggleHUD()">📋</button>
-    <button class="btn-float" onclick="openSync()">📡</button>
-  </div>
-
   <div id="hud-mestre">
-    <div class="header-grupo">
-      <h2>Mestre</h2>
-      <button class="btn-gear" id="btn-editar" onclick="toggleEdicao()">⚙️</button>
-    </div>
+    
+    <div class="hud-header">
+      <div class="header-top">
+        <span style="font-weight:bold; color:#fff;">CONTROLE</span>
+        <button class="btn-gear" onclick="toggleEdicao()">⚙️</button>
+      </div>
 
-    <div class="dice-section">
-      <button class="btn-dice" onclick="rolarD20()">🎲 Rolar D20</button>
-      <div id="dice-result"></div>
-    </div>
-
-    <div class="control-group">
-      <div class="control-title">Cenário / Música</div>
-      <div class="btn-row">
+      <div class="ctrl-grid">
         <button class="btn-ctrl" id="btn-map-1" onclick="mudarCenario('1')">1</button>
         <button class="btn-ctrl" id="btn-map-2" onclick="mudarCenario('2')">2</button>
         <button class="btn-ctrl" id="btn-map-3" onclick="mudarCenario('3')">3</button>
@@ -185,28 +198,25 @@
         <button class="btn-ctrl" id="btn-map-5" onclick="mudarCenario('5')">5</button>
         <button class="btn-ctrl" id="btn-map-6" onclick="mudarCenario('6')">6</button>
       </div>
-      <div class="btn-row">
-        <button class="btn-ctrl" id="btn-mod-d" onclick="mudarModo('d')">☀️ Dia</button>
-        <button class="btn-ctrl" id="btn-mod-n" onclick="mudarModo('n')">🌙 Noite</button>
-        <button class="btn-ctrl" id="btn-mod-i" onclick="mudarModo('i')">👹 Inv.</button>
+
+      <div class="ctrl-grid-row">
+        <button class="btn-ctrl" id="btn-mod-d" onclick="mudarModo('d')">☀️</button>
+        <button class="btn-ctrl" id="btn-mod-n" onclick="mudarModo('n')">🌙</button>
         <button class="btn-ctrl" id="btn-rain" onclick="toggleRain()">🌧️</button>
+        <button class="btn-ctrl" id="btn-tv-vis" onclick="toggleTvVisibility()">👁️</button>
       </div>
     </div>
-    
-    <button class="btn-add-char" onclick="adicionarJogador()">➕ Novo Jogador</button>
 
-    <div id="lista-mestre"></div>
+    <div class="hud-content" id="lista-mestre"></div>
 
-    <div class="rodape">
-      <button class="btn" onclick="resetarJogo()" style="background:transparent; border:1px dashed #444; margin-bottom:5px;">🗑️ Reset Geral</button>
+    <div class="hud-footer">
+      <div class="dice-box">
+        <button class="btn-dice" onclick="rolarD20()">🎲 ROLAR D20</button>
+        <div id="dice-display">-</div>
+      </div>
+      <button class="btn-ctrl" onclick="adicionarJogador()" style="width:100%; margin-top:5px; display:none;" id="btn-add-mob">Novo Jogador</button>
     </div>
-  </div>
 
-  <div id="tv-layer">
-    <div id="zone-norte" class="zone"></div>
-    <div id="zone-sul" class="zone"></div>
-    <div id="zone-leste" class="zone"></div>
-    <div id="zone-oeste" class="zone"></div>
   </div>
 </div>
 
@@ -229,229 +239,280 @@ const CONFIG = {
     { valor: "poison", label: "☠️ Envenenado" }, { valor: "invis", label: "👻 Invisível" }
   ],
   jogadores: [
-    { nome: "DM (Sul)", classe: "Mestre", hpMax: 50, hpAtual: 50, status: "", posicao: "sul" },
-    { nome: "Norte", classe: "Mago", hpMax: 30, hpAtual: 30, status: "", posicao: "norte" },
-    { nome: "Oeste", classe: "Clérigo", hpMax: 40, hpAtual: 40, status: "", posicao: "oeste" }
+    { nome: "Jogador 1", classe: "Guerreiro", hpMax: 50, hpAtual: 50, status: "", posicao: "sul" },
+    { nome: "Jogador 2", classe: "Mago", hpMax: 30, hpAtual: 30, status: "", posicao: "norte" }
   ],
-  extensao_imagem: ".jpg", volume: 0.5, saveKey: "rpg_dm_v17_command"
+  extensao_imagem: ".jpg", volume: 0.5, saveKey: "rpg_dm_v18_mobile"
 };
 
+/* ESTADO GLOBAL */
 const ui = {
-  container: document.getElementById("game-container"), visual: document.getElementById("mapa-visual"),
-  mestre: document.getElementById("hud-mestre"), listaMestre: document.getElementById("lista-mestre"),
-  tvLayer: document.getElementById("tv-layer"),
+  mestreList: document.getElementById("lista-mestre"),
   zones: { norte: document.getElementById("zone-norte"), sul: document.getElementById("zone-sul"), leste: document.getElementById("zone-leste"), oeste: document.getElementById("zone-oeste") },
-  diceResult: document.getElementById("dice-result"), rain: document.getElementById("efeito-chuva"),
-  btnTV: document.getElementById("btn-tv-toggle"), btnEdit: document.getElementById("btn-editar"),
-  syncPanel: document.getElementById("sync-panel"), statusConn: document.getElementById("status-conexao"),
-  audioPlayers: {}
+  tvLayer: document.getElementById("tv-layer"),
+  diceDisplay: document.getElementById("dice-display"),
+  tvDiceOverlay: document.getElementById("tv-dice-overlay"),
+  rain: document.getElementById("efeito-chuva"),
+  visual: document.getElementById("mapa-visual"),
+  audioPlayers: {},
+  buttons: { tvVis: document.getElementById("btn-tv-vis") }
 };
 
 let estadoAtual = { mapa: '1', modo: 'd', chuva: false };
-let faixaAtiva = 'A'; let trilhaAtualUrl = ""; let modoEdicao = false; let isRemote = false;
-const STATUS_AUTOMATICOS = ["", "cansado", "critico", "caido"];
+let tvVisible = false; // Começa oculto
+let lastDiceRoll = { val: 0, id: 0 }; // Para sincronizar dados
+let isRemote = false; let modoEdicao = false;
+let faixaAtiva = 'A'; let trilhaAtualUrl = "";
 ui.faixaA = new Audio(); ui.faixaA.loop = true; ui.faixaA.volume = 0;
 ui.faixaB = new Audio(); ui.faixaB.loop = true; ui.faixaB.volume = 0;
 
-/* INIT */
+/* --- INICIALIZAÇÃO --- */
 function startApp(mode) {
   document.getElementById("intro-screen").style.display = "none";
   document.getElementById("game-container").style.display = "block";
-  if (mode === 'remote') {
-    isRemote = true;
+  isRemote = (mode === 'remote');
+  
+  if (isRemote) {
     document.body.classList.add("remote-active");
     document.getElementById("remote-ui").style.display = "block";
     openSync();
   } else {
-    isRemote = false;
     document.getElementById("host-ui").style.display = "block";
     startHost(); openSync();
   }
-  carregarJogo(); updateUIState(); carregarCena();
+  carregarJogo(); updateAll();
 }
 
-/* SYNC */
+/* --- SYNC (PEERJS) --- */
 let peer = null; let conn = null;
-function openSync() { ui.syncPanel.classList.add("visivel"); }
-function closeSync() { ui.syncPanel.classList.remove("visivel"); }
+function openSync() { document.getElementById("sync-panel").classList.add("visivel"); }
+function closeSync() { document.getElementById("sync-panel").classList.remove("visivel"); }
+
 function startHost() {
-  const randomId = "rpg-" + Math.floor(Math.random() * 1000);
-  peer = new Peer(randomId);
+  const pid = "rpg-" + Math.floor(Math.random() * 9999);
+  peer = new Peer(pid);
   peer.on('open', (id) => { document.getElementById("my-peer-id").value = id; });
-  peer.on('connection', (c) => { conn = c; setupConnection(); setTimeout(() => syncData(), 500); });
-}
-function connectToPeer() {
-  const targetId = document.getElementById("target-peer-id").value;
-  if(!targetId) return alert("Digite o ID");
-  peer = new Peer();
-  peer.on('open', () => { conn = peer.connect(targetId); setupConnection(); });
-}
-function setupConnection() {
-  ui.statusConn.style.display = "block"; closeSync();
-  conn.on('data', (data) => {
-    if(data.jogadores) CONFIG.jogadores = data.jogadores;
-    if(data.estado) { estadoAtual = data.estado; carregarCena(); }
-    updateUIState(); salvarJogo(false);
+  peer.on('connection', (c) => { 
+    conn = c; setupConnection(); 
+    setTimeout(sendSync, 500); 
   });
 }
-function syncData() {
-  if(conn && conn.open) { conn.send({ jogadores: CONFIG.jogadores, estado: estadoAtual }); }
+
+function connectToPeer() {
+  const target = document.getElementById("target-peer-id").value;
+  if(!target) return alert("ID vazio");
+  peer = new Peer();
+  peer.on('open', () => { conn = peer.connect(target); setupConnection(); });
 }
-function updateState() { salvarJogo(); updateUIState(); syncData(); }
 
-/* CONTROLES DE CENÁRIO */
-window.mudarCenario = (key) => { estadoAtual.mapa = key; carregarCena(); syncData(); updateUIState(); };
-window.mudarModo = (key) => { estadoAtual.modo = key; carregarCena(); syncData(); updateUIState(); };
-window.toggleRain = () => { estadoAtual.chuva = !estadoAtual.chuva; carregarCena(); syncData(); updateUIState(); };
+function setupConnection() {
+  closeSync();
+  conn.on('data', (data) => {
+    // Recebe dados
+    if(data.jogadores) CONFIG.jogadores = data.jogadores;
+    if(data.estado) estadoAtual = data.estado;
+    if(data.tvVisible !== undefined) tvVisible = data.tvVisible;
+    
+    // Verifica se houve rolagem de dado nova
+    if(data.dice && data.dice.id !== lastDiceRoll.id) {
+      lastDiceRoll = data.dice;
+      showDice(lastDiceRoll.val); // Mostra visual
+    }
 
-/* RENDER */
-function updateUIState() {
-  // Atualiza Botões Ativos
-  document.querySelectorAll('.btn-ctrl').forEach(b => b.classList.remove('active', 'rain-active'));
-  const btnMap = document.getElementById('btn-map-' + estadoAtual.mapa);
-  if(btnMap) btnMap.classList.add('active');
-  const btnMod = document.getElementById('btn-mod-' + estadoAtual.modo);
-  if(btnMod) btnMod.classList.add('active');
-  if(estadoAtual.chuva) document.getElementById('btn-rain').classList.add('rain-active');
+    updateAll(false); // Atualiza UI sem reenviar loop
+  });
+}
 
-  // Chuva Visual
+function sendSync() {
+  if(conn && conn.open) {
+    conn.send({
+      jogadores: CONFIG.jogadores,
+      estado: estadoAtual,
+      tvVisible: tvVisible,
+      dice: lastDiceRoll
+    });
+  }
+  salvarJogo();
+}
+
+/* --- LÓGICA CORE --- */
+function updateAll(propagate = true) {
+  renderHUD();
+  updateControls();
+  carregarCena();
+  if(propagate) sendSync();
+}
+
+function rolarD20() {
+  const val = Math.floor(Math.random() * 20) + 1;
+  // Atualiza timestamp para o sync saber que é um dado novo
+  lastDiceRoll = { val: val, id: Date.now() };
+  showDice(val);
+  updateAll();
+}
+
+function showDice(val) {
+  // Mostra no controle
+  ui.diceDisplay.innerText = val;
+  ui.diceDisplay.style.color = val === 20 ? "#2ecc71" : (val === 1 ? "#e74c3c" : "#f1c40f");
+  
+  // Mostra na TV (Overlay gigante)
   if(!isRemote) {
+    ui.tvDiceOverlay.innerText = val;
+    ui.tvDiceOverlay.style.borderColor = val === 20 ? "#2ecc71" : (val === 1 ? "#e74c3c" : "#fff");
+    ui.tvDiceOverlay.classList.add("show");
+    setTimeout(() => ui.tvDiceOverlay.classList.remove("show"), 3000);
+  }
+}
+
+function toggleTvVisibility() {
+  tvVisible = !tvVisible;
+  updateAll();
+}
+
+/* --- RENDER --- */
+function updateControls() {
+  // Botões de Cena
+  document.querySelectorAll('.btn-ctrl').forEach(b => b.classList.remove('active', 'rain-active', 'tv-active'));
+  
+  const mapBtn = document.getElementById('btn-map-' + estadoAtual.mapa);
+  if(mapBtn) mapBtn.classList.add('active');
+  
+  const modBtn = document.getElementById('btn-mod-' + estadoAtual.modo);
+  if(modBtn) modBtn.classList.add('active');
+  
+  if(estadoAtual.chuva) document.getElementById('btn-rain').classList.add('rain-active');
+  if(tvVisible) document.getElementById('btn-tv-vis').classList.add('tv-active');
+
+  // Visibilidade Layers
+  if(!isRemote) {
+    if(tvVisible) ui.tvLayer.classList.add("visivel"); else ui.tvLayer.classList.remove("visivel");
     if(estadoAtual.chuva) ui.rain.classList.add("ativo"); else ui.rain.classList.remove("ativo");
   }
+}
 
-  // Lista Jogadores
-  ui.listaMestre.innerHTML = "";
+function renderHUD() {
+  ui.mestreList.innerHTML = "";
   Object.values(ui.zones).forEach(z => z.innerHTML = "");
 
   CONFIG.jogadores.forEach((char, idx) => {
+    // Cálculos
     const pct = Math.max(0, Math.min(100, (char.hpAtual / char.hpMax) * 100));
     let cor = "hp-verde"; if (pct < 50) cor = "hp-amarelo"; if (pct < 20) cor = "hp-vermelho"; if (char.hpAtual <= 0) cor = "hp-morto";
     const statusObj = CONFIG.listaStatus.find(s => s.valor === char.status);
-    const statusTexto = statusObj ? statusObj.label : "";
+    const statusTxt = statusObj ? statusObj.label : "";
 
-    // Mestre
-    const cardMestre = document.createElement("div");
-    cardMestre.className = "mestre-card status-border";
-    cardMestre.setAttribute("data-status", char.status);
-    let options = "";
-    CONFIG.listaStatus.forEach(s => {
-      const sel = char.status === s.valor ? "selected" : "";
-      options += `<option value="${s.valor}" ${sel}>${s.label}</option>`;
-    });
-    const posSul = char.posicao === "sul" ? "selected" : "";
-    const posNorte = char.posicao === "norte" ? "selected" : "";
-    const posLeste = char.posicao === "leste" ? "selected" : "";
-    const posOeste = char.posicao === "oeste" ? "selected" : "";
+    // --- CARD MESTRE (CONTROLE) ---
+    const mCard = document.createElement("div");
+    mCard.className = "mestre-card status-border";
+    mCard.setAttribute("data-status", char.status);
+    
+    // Selects
+    let stOpts = ""; CONFIG.listaStatus.forEach(s => stOpts += `<option value="${s.valor}" ${char.status===s.valor?'selected':''}>${s.label}</option>`);
+    
+    const pSul = char.posicao === "sul" ? "selected" : "";
+    const pNorte = char.posicao === "norte" ? "selected" : "";
+    const pLeste = char.posicao === "leste" ? "selected" : "";
+    const pOeste = char.posicao === "oeste" ? "selected" : "";
 
-    cardMestre.innerHTML = `
+    mCard.innerHTML = `
       <button class="btn-delete" onclick="removerJogador(${idx})">×</button>
-      <input type="text" class="input-nome" value="${char.nome}" onchange="editarDados(${idx}, 'nome', this.value)">
-      <input type="text" class="input-classe" value="${char.classe}" onchange="editarDados(${idx}, 'classe', this.value)">
-      <div class="hp-wrapper"><span>PV</span> <span>${Math.ceil(char.hpAtual)} / ${char.hpMax}</span></div>
-      <div class="hp-track"><div class="hp-fill ${cor}" style="width: ${pct}%"></div></div>
+      <input type="text" class="input-nome" value="${char.nome}" onchange="edit(${idx}, 'nome', this.value)">
+      
+      <div class="hp-wrapper"><span>HP</span> <span>${Math.ceil(char.hpAtual)}/${char.hpMax}</span></div>
+      <div class="hp-track"><div class="hp-fill ${cor}" style="width:${pct}%"></div></div>
+      
       <div class="controles">
-        <button class="btn" onclick="mudarHP(${idx}, -5)">-5</button>
-        <button class="btn" onclick="mudarHP(${idx}, -1)">-1</button>
-        <button class="btn" onclick="mudarHP(${idx}, 1)">+1</button>
-        <button class="btn" onclick="mudarHP(${idx}, 5)">+5</button>
+        <button class="btn" onclick="hp(${idx}, -5)">-5</button>
+        <button class="btn" onclick="hp(${idx}, -1)">-1</button>
+        <button class="btn" onclick="hp(${idx}, 1)">+1</button>
+        <button class="btn" onclick="hp(${idx}, 5)">+5</button>
       </div>
-      <select class="status-select" onchange="mudarStatusManual(${idx}, this.value)">${options}</select>
-      <select class="select-posicao" onchange="editarDados(${idx}, 'posicao', this.value)">
-         <option value="sul" ${posSul}>Sul</option>
-         <option value="norte" ${posNorte}>Norte</option>
-         <option value="leste" ${posLeste}>Leste</option>
-         <option value="oeste" ${posOeste}>Oeste</option>
-      </select>
+      
+      <div style="display:flex; gap:5px;">
+        <select class="status-select" onchange="st(${idx}, this.value)">${stOpts}</select>
+        <select class="select-posicao" onchange="edit(${idx}, 'posicao', this.value)" style="width:80px;">
+           <option value="sul" ${pSul}>Sul</option><option value="norte" ${pNorte}>Norte</option>
+           <option value="leste" ${pLeste}>Lest</option><option value="oeste" ${pOeste}>Oest</option>
+        </select>
+      </div>
     `;
-    ui.listaMestre.appendChild(cardMestre);
+    ui.mestreList.appendChild(mCard);
 
-    // TV
-    if (!isRemote) {
-      const cardTV = document.createElement("div");
-      cardTV.className = "tv-card status-border";
-      cardTV.setAttribute("data-status", char.status);
-      cardTV.innerHTML = `
+    // --- CARD TV (VISUAL) ---
+    if(!isRemote) {
+      const tCard = document.createElement("div");
+      tCard.className = "tv-card status-border";
+      tCard.setAttribute("data-status", char.status);
+      tCard.innerHTML = `
         <div class="nome-tv">${char.nome}</div>
         <div class="classe-tv">${char.classe}</div>
         <div class="hp-wrapper"><span>VITALIDADE</span> <span>${Math.ceil(char.hpAtual)} / ${char.hpMax}</span></div>
-        <div class="hp-track"><div class="hp-fill ${cor}" style="width: ${pct}%"></div></div>
-        <div class="status-tv">${statusTexto}</div>
+        <div class="hp-track"><div class="hp-fill ${cor}" style="width:${pct}%"></div></div>
+        <div class="status-tv">${statusTxt}</div>
       `;
-      (ui.zones[char.posicao] || ui.zones.sul).appendChild(cardTV);
+      (ui.zones[char.posicao] || ui.zones.sul).appendChild(tCard);
     }
   });
 }
 
-/* DADOS DO JOGO */
-window.adicionarJogador = () => { CONFIG.jogadores.push({ nome: "Novo", classe: "Classe", hpMax: 30, hpAtual: 30, status: "", posicao: "sul" }); updateState(); };
-window.removerJogador = (idx) => { if(confirm("Excluir?")) { CONFIG.jogadores.splice(idx, 1); updateState(); } };
-window.editarDados = (idx, campo, valor) => { CONFIG.jogadores[idx][campo] = valor; updateState(); }; 
-window.mudarHP = (idx, val) => {
+/* --- MANIPULAÇÃO DADOS --- */
+window.hp = (idx, val) => {
   const c = CONFIG.jogadores[idx]; c.hpAtual += val;
   if(c.hpAtual > c.hpMax) c.hpAtual = c.hpMax; if(c.hpAtual < 0) c.hpAtual = 0;
-  const pct = (c.hpAtual / c.hpMax) * 100;
+  // Auto Status
+  const pct = (c.hpAtual/c.hpMax)*100;
   let ns = ""; if(c.hpAtual<=0) ns="caido"; else if(pct<20) ns="critico"; else if(pct<50) ns="cansado";
   if(c.hpAtual<=0 || STATUS_AUTOMATICOS.includes(c.status) || (c.hpAtual>0 && c.status==="caido")) c.status = ns;
-  updateState();
+  updateAll();
 };
-window.mudarStatusManual = (idx, val) => { CONFIG.jogadores[idx].status = val; updateState(); };
-window.rolarD20 = () => {
-  const val = Math.floor(Math.random() * 20) + 1;
-  ui.diceResult.innerText = val;
-  ui.diceResult.className = val===20?"crit-sucesso":val===1?"crit-falha":"normal-roll";
+window.st = (idx, val) => { CONFIG.jogadores[idx].status = val; updateAll(); };
+window.edit = (idx, f, v) => { CONFIG.jogadores[idx][f] = v; updateAll(); };
+window.adicionarJogador = () => { CONFIG.jogadores.push({nome:"Novo", classe:"Classe", hpMax:30, hpAtual:30, status:"", posicao:"sul"}); updateAll(); };
+window.removerJogador = (idx) => { if(confirm("Excluir?")) { CONFIG.jogadores.splice(idx, 1); updateAll(); } };
+
+window.toggleEdicao = () => {
+  modoEdicao = !modoEdicao;
+  document.getElementById("btn-editar").classList.toggle("ativo");
+  document.getElementById("hud-mestre").classList.toggle("modo-edicao");
+  document.getElementById("btn-add-mob").style.display = modoEdicao ? "block" : "none";
 };
 
-/* AUDIO/CENA */
-function atualizarAudio(urlNovo) {
-  if (isRemote) return;
-  if(urlNovo === trilhaAtualUrl) return; trilhaAtualUrl = urlNovo;
-  const entrando = faixaAtiva === 'A' ? ui.faixaB : ui.faixaA;
-  const saindo = faixaAtiva === 'A' ? ui.faixaA : ui.faixaB;
-  faixaAtiva = faixaAtiva === 'A' ? 'B' : 'A';
-  entrando.src = CONFIG.pastas.audios + urlNovo; entrando.volume = 0; entrando.play().catch(()=>{});
-  crossfade(entrando, saindo);
+window.mudarCenario = (k) => { estadoAtual.mapa = k; updateAll(); };
+window.mudarModo = (k) => { estadoAtual.modo = k; updateAll(); };
+window.toggleRain = () => { estadoAtual.chuva = !estadoAtual.chuva; updateAll(); };
+
+/* --- AUDIO/VISUAL --- */
+function carregarCena() {
+  if(isRemote) return;
+  const m = CONFIG.mapas[estadoAtual.mapa]; const mod = CONFIG.estados[estadoAtual.modo]; if(!m)return;
+  const url = CONFIG.pastas.imagens + m.arquivo + mod.sufixo + CONFIG.extensao_imagem;
+  const img = new Image(); img.src = url;
+  img.onload = () => { ui.visual.style.backgroundImage = `url('${url}')`; };
+  if(m.sons && m.sons[estadoAtual.modo]) audioCrossfade(m.sons[estadoAtual.modo]);
 }
-function crossfade(ent, sai) {
-  let vol = 0; const max = CONFIG.volume; if(window.fadeInt) clearInterval(window.fadeInt);
+
+function audioCrossfade(urlNovo) {
+  if(urlNovo === trilhaAtualUrl) return; trilhaAtualUrl = urlNovo;
+  const ent = faixaAtiva === 'A' ? ui.faixaB : ui.faixaA;
+  const sai = faixaAtiva === 'A' ? ui.faixaA : ui.faixaB;
+  faixaAtiva = faixaAtiva === 'A' ? 'B' : 'A';
+  ent.src = CONFIG.pastas.audios + urlNovo; ent.volume = 0; ent.play().catch(()=>{});
+  
+  let vol = 0; if(window.fadeInt) clearInterval(window.fadeInt);
   window.fadeInt = setInterval(() => {
-    vol += max/20;
-    if(vol >= max) { ent.volume = max; sai.volume = 0; sai.pause(); clearInterval(window.fadeInt); }
-    else { ent.volume = vol; sai.volume = Math.max(0, max - vol); }
+    vol += 0.05;
+    if(vol >= CONFIG.volume) { ent.volume = CONFIG.volume; sai.volume = 0; sai.pause(); clearInterval(window.fadeInt); }
+    else { ent.volume = vol; sai.volume = Math.max(0, CONFIG.volume - vol); }
   }, 100);
 }
-function carregarCena() {
-  if (isRemote) return; 
-  if(estadoAtual.chuva) ui.rain.classList.add("ativo"); else ui.rain.classList.remove("ativo");
-  const mapa = CONFIG.mapas[estadoAtual.mapa]; const modo = CONFIG.estados[estadoAtual.modo]; if(!mapa)return;
-  const url = CONFIG.pastas.imagens + mapa.arquivo + modo.sufixo + CONFIG.extensao_imagem;
-  const img = new Image(); img.src = url;
-  img.onload = () => { ui.visual.style.backgroundImage = `url('${url}')`; ui.container.className = `modo-${modo.id}`; };
-  if(mapa.sons && mapa.sons[estadoAtual.modo]) atualizarAudio(mapa.sons[estadoAtual.modo]);
-}
 
-/* UTIL */
-function toggleHUD() { ui.mestre.classList.toggle("oculto"); }
-function toggleTV() { ui.tvLayer.classList.toggle("visivel"); ui.btnTV.classList.toggle("ativo"); }
-function toggleEdicao() {
-  modoEdicao = !modoEdicao;
-  if(modoEdicao) { ui.btnEdit.classList.add("ativo"); ui.mestre.classList.add("modo-edicao"); } 
-  else { ui.btnEdit.classList.remove("ativo"); ui.mestre.classList.remove("modo-edicao"); }
-}
-function salvarJogo(saveToDisk = true) { if(saveToDisk) localStorage.setItem(CONFIG.saveKey, JSON.stringify(CONFIG.jogadores)); }
+/* SAVE */
+function salvarJogo(save=true) { if(save) localStorage.setItem(CONFIG.saveKey, JSON.stringify(CONFIG.jogadores)); }
 function carregarJogo() { const s = localStorage.getItem(CONFIG.saveKey); if(s) try{CONFIG.jogadores=JSON.parse(s)}catch(e){} }
-window.resetarJogo = () => { if(confirm("Resetar?")) { localStorage.removeItem(CONFIG.saveKey); location.reload(); } };
+window.resetarJogo = () => { if(confirm("Reset?")) { localStorage.removeItem(CONFIG.saveKey); location.reload(); } };
 
-document.addEventListener("keydown", (e) => {
-  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
-  // Atalhos apenas se não for remoto (no PC)
-  if (!isRemote) {
-    if (CONFIG.mapas[e.key]) mudarCenario(e.key);
-    if (CONFIG.estados[e.key]) mudarModo(e.key);
-    if (e.key.toLowerCase() === 'h') toggleHUD();
-    if (e.key.toLowerCase() === 't') toggleTV();
-    if (e.key.toLowerCase() === 'r') toggleRain();
-  }
-});
+init(); function init() { /* wait for user choice */ }
 </script>
 </body>
 </html>
